@@ -86,7 +86,8 @@ app.post('/connect_jotform', function(request,response){
                     url: base_url+'get_audio/'+apiKey+'/'+formId+'/'+number+'/'+key
                 }, function(err, data) {
                     // When we get a response from Twilio, respond to the HTTP POST request
-                    response.send('Call incoming!');
+                    console.log('ERROR :', err);
+                    response.send('Call incoming!' +err.message);
                 });
                 return false;
             }
