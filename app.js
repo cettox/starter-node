@@ -4,7 +4,7 @@ var http = require('http'),
     express = require('express'),
     twilio = require('twilio');
 
-var base_url = 'http://memblr.net:3030/';
+var base_url = 'http://memblr.net:3000/';
 
 // Load configuration information from system environment variables.
 var TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID,
