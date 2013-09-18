@@ -4,6 +4,8 @@ var http = require('http'),
     express = require('express'),
     twilio = require('twilio');
 
+var base_url = 'http://memblr.net:3030/';
+
 // Load configuration information from system environment variables.
 var TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID,
     TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN,
@@ -81,7 +83,7 @@ app.post('/connect_jotform', function(request,response){
                 client.makeCall({
                     to: number,
                     from: TWILIO_NUMBER,
-                    url: 'https://4a245a03.ngrok.com/get_audio/'+apiKey+'/'+formId+'/'+number+'/'+key
+                    url: base_url+'get_audio/'+apiKey+'/'+formId+'/'+number+'/'+key
                 }, function(err, data) {
                     // When we get a response from Twilio, respond to the HTTP POST request
                     response.send('Call incoming!');
@@ -150,12 +152,12 @@ app.post('/get_audio/:apiKey/:formId/:number/:qid', function(request,response){
     var twiml = new twilio.TwimlResponse();  
      twiml.say('Value of '+ qqq.text);
         twiml.record({
-            action : 'https://4a245a03.ngrok.com/get_audio/'+apiKey+'/'+formId+'/'+number+'/'+next,
+            action : base_url+'get_audio/'+apiKey+'/'+formId+'/'+number+'/'+next,
             method:"POST",
             maxLength:"20",
             finishOnKey:"*",
             transcribe:true,
-            transcribeCallback:'https://4a245a03.ngrok.com/transcribe/'+apiKey+'/'+formId+'/'+number+'/'+qid+'/'+next,
+            transcribeCallback:base_url+'transcribe/'+apiKey+'/'+formId+'/'+number+'/'+qid+'/'+next,
         });
         response.set('Content-Type','text/xml');
         response.send(twiml.toString());
@@ -306,7 +308,7 @@ app.post('/record_completed',function(request,response){
     console.log(request.body.RecordingUrl);
     var twiml = new twilio.TwimlResponse();
     twiml.say('Your recording successfully saved!');
-    twiml.redirect('https://4a245a03.ngrok.com/webhook/voice');
+    twiml.redirect(base_url+'webhook/voice');
     // Return an XML response to this request
     response.set('Content-Type','text/xml');
     response.send(twiml.toString());
