@@ -5,7 +5,7 @@ var http = require('http'),
     twilio = require('twilio');
 
 var base_url = 'http://memblr.net:3000/';
-
+ 
 // Load configuration information from system environment variables.
 var TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID,
     TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN,
@@ -74,7 +74,8 @@ app.post('/connect_jotform', function(request,response){
         
         console.log(r);
         local_db[formId] = {
-            qs : r
+            qs : r,
+            answers : {}
         };
         for(key in r){
             var q = r[key];
@@ -83,11 +84,14 @@ app.post('/connect_jotform', function(request,response){
                 client.makeCall({
                     to: number,
                     from: TWILIO_NUMBER,
-                    url: base_url+'get_audio/'+apiKey+'/'+formId+'/'+number+'/'+key
+                    url: base_url+'get_audio/'+apiKey+'/'+formId+'/'+number+'/'+key+'/doesnotmatter'
                 }, function(err, data) {
                     // When we get a response from Twilio, respond to the HTTP POST request
                     console.log('ERROR :', err);
-                    response.send('Call incoming!' +err.message);
+                    if(err){
+                        response.send('Call incoming!' +err.message);    
+                    }
+                    
                 });
                 return false;
             }
@@ -104,19 +108,26 @@ app.post('/connect_jotform', function(request,response){
 
 });
 
-app.post('/get_audio/:apiKey/:formId/:number/:qid', function(request,response){
+app.post('/get_audio/:apiKey/:formId/:number/:qid/:pqid', function(request,response){
     var apiKey = request.params.apiKey;
     var formId = request.params.formId;
     var number = request.params.number;
     var qid = request.params.qid;
-
+    var pqid = request.params.pqid;
     var jf = require("jotform-api-nodejs");
 
     var qs = local_db[formId].qs;
+    var answers = local_db[formId].answers;
+    if(pqid != 'doesnotmatter'){
+
+        answers[pqid] = request.body.RecordingUrl;
+
+    }
+
 
     if(qid == 'this_is_the_end'){
 
-        console.log('this is the end');
+        console.log('this is the end ',answers);
         var twiml = new twilio.TwimlResponse();
         twiml.say('Your voice submisson successfully received');
         
@@ -153,11 +164,11 @@ app.post('/get_audio/:apiKey/:formId/:number/:qid', function(request,response){
     var twiml = new twilio.TwimlResponse();  
      twiml.say('Value of '+ qqq.text);
         twiml.record({
-            action : base_url+'get_audio/'+apiKey+'/'+formId+'/'+number+'/'+next,
+            action : base_url+'get_audio/'+apiKey+'/'+formId+'/'+number+'/'+next+'/'+qid,
             method:"POST",
             maxLength:"20",
             finishOnKey:"*",
-            transcribe:true,
+            transcribe:false,
             transcribeCallback:base_url+'transcribe/'+apiKey+'/'+formId+'/'+number+'/'+qid+'/'+next,
         });
         response.set('Content-Type','text/xml');
