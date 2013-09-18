@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Twilio web thing</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap -->
+    <link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
+  </head>
+  <body>
+      
+
+    Number : <input type="text" id='number' value='4156910958' />  <button id='call'>call</button> <br />
+
+    <button id='hangup'>hangup</button>
+      
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="//code.jquery.com/jquery.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="js/bootstrap.min.js"></script>
+    <script src='http://js.jotform.com/JotForm.min.js'></script>
+   	<script type="text/javascript" src="//static.twilio.com/libs/twiliojs/1.1/twilio.min.js"></script>
+    <script src="js/init2.js"></script>
+    <script type"text/javascript">
+        var token = "<%= token %>";
+      $(document).ready(function(){
+
+          Twilio.Device.setup(token);
+          
+          Twilio.Device.ready(function(device) {
+            // The device is now ready
+            console.log("Twilio.Device is now ready for connections");
+
+          });  
+
+          Twilio.Device.incoming(function(connection) {
+                connection.accept();
+                // do awesome ui stuff here
+                alert('on call');
+            });
+
+
+          // Connect an outbound call
+        $('#call').on('click', function() {
+          Twilio.Device.connect({
+            phone_number:$('#number').val()
+          });
+        });
+
+         // Hang up any active call
+        $('#hangup').on('click', function() {
+          console.log('asd');
+          Twilio.Device.disconnectAll();
+        });
+
+      });
+    </script>
+  </body>
+</html>
