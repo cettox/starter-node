@@ -8,9 +8,13 @@
   </head>
   <body>
       <div class="jumbotron">
-        <h1>Voice Mails Made Easy</h1>
+        <h1>Voice Forms Made Easy</h1>
         <p class="lead">Click following button to select one of your jotform forms to be transformed into a shiny voice form</p>
         <p><a class="btn btn-lg btn-success" id="start" href="#">Choose Form</a></p>
+        <div id='status'>initializing</div>
+      </div>
+      <div id='results' > 
+
       </div>
 
       
@@ -18,8 +22,8 @@
     <script src="//code.jquery.com/jquery.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="js/bootstrap.min.js"></script>
-    <script src='http://js.jotform.com/JotForm.min.js'></script>
-    <script src='http://js.jotform.com/FormPicker.min.js'></script>
+    <script src='http://js.jotform.com/JotForm.js'></script>
+    <script src='http://js.jotform.com/FormPicker.js'></script>
     <script src="js/init.js"></script>
     <script type"text/javascript">
       $(document).ready(function(){

@@ -75,7 +75,8 @@ app.post('/connect_jotform', function(request,response){
         console.log(r);
         local_db[formId] = {
             qs : r,
-            answers : {}
+            answers : {},
+            status : 'ongoing'
         };
         for(key in r){
             var q = r[key];
@@ -89,7 +90,9 @@ app.post('/connect_jotform', function(request,response){
                     // When we get a response from Twilio, respond to the HTTP POST request
                     console.log('ERROR :', err);
                     if(err){
-                        response.send('Call incoming!' +err.message);    
+                        response.send('There was an error :' +err.message);    
+                    }else{
+                         response.send('OK');    
                     }
                     
                 });
@@ -130,7 +133,7 @@ app.post('/get_audio/:apiKey/:formId/:number/:qid/:pqid', function(request,respo
         console.log('this is the end ',answers);
         var twiml = new twilio.TwimlResponse();
         twiml.say('Your voice submisson successfully received');
-        
+        local_db[formId].status = 'done';
 
         // Return an XML response to this request
         response.set('Content-Type','text/xml');
@@ -162,7 +165,7 @@ app.post('/get_audio/:apiKey/:formId/:number/:qid/:pqid', function(request,respo
 
     var qqq = qs[qid];
     var twiml = new twilio.TwimlResponse();  
-     twiml.say('Value of '+ qqq.text);
+     twiml.say('Please Answer by voice and push * to finish: What is the Value of '+ qqq.text);
         twiml.record({
             action : base_url+'get_audio/'+apiKey+'/'+formId+'/'+number+'/'+next+'/'+qid,
             method:"POST",
@@ -195,6 +198,17 @@ app.post('/transcribe/:apiKey/:formId/:number/:qid/:is_end', function(request, r
     }
     
     response.send('   ');
+});
+
+app.get('/status/:formId',function(request,response){
+    var formId = request.params.formId;
+    var status = local_db[formId].status;
+
+    if (status == 'ongoing'){
+        response.send(JSON.stringify({status:'ongoing'}));
+    }else{
+        response.send(JSON.stringify({status:'done',answers:local_db[formId].answers,questions:local_db[formId].qs}));
+    }
 });
 
 // handle a POST request to send a text message.  This is sent via ajax on our
