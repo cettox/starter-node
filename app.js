@@ -250,8 +250,8 @@ app.post('/get_audio/:formId/:number/:qid/:pqid', function(request,response){
             method:"POST",
             maxLength:"20",
             finishOnKey:"*",
-            transcribe:false,
-            transcribeCallback:base_url+'transcribe/'+'/'+formId+'/'+number+'/'+qid+'/'+next,
+            transcribe:true,
+            transcribeCallback:base_url+'transcribe/'+formId+'/'+number+'/'+qid+'/'+next,
         });
         response.set('Content-Type','text/xml');
         response.send(twiml.toString());

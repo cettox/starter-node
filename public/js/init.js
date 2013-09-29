@@ -35,7 +35,7 @@ function checkStatus(formId,number){
 			if(res.status == 'done'){
 				us('Form Voice Submitted. Preparing results.');
 				setTimeout(function(){
-					renderResults(res.answers,res.questions);
+					renderResults(res.answers,res.qs,res.texts);
 				},300);
 				iflag = true
 			}else{
@@ -57,7 +57,7 @@ function us(str){
 	$('#status').html(str);
 }
 
-function renderResults(answers, questions){
+function renderResults(answers, questions,texts){
 	console.log(answers,questions);
 	
 	var html = '';
@@ -65,8 +65,9 @@ function renderResults(answers, questions){
 	for(var i in answers){
 		var alink = answers[i];
 		var q = questions[i];
+		var text =texts[i];
 		console.log('inside the loop ', alink, q.text);
-		html += 'Q: '+q.text+' : <a href="'+alink+'" target="_blank">Click here to listen</a> <br />';
+		html += 'Q: '+q.text+' : Text = '+text+' ,<a href="'+alink+'" target="_blank">Audio</a> <br />';
 
 	}
 	console.log('final html ',html);
