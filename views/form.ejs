@@ -1,0 +1,37 @@
+<% include common/header %>
+
+  <!-- write your content inside this div -->
+  <div class="content-container">
+    <div class="content">
+      <div class="row">
+        <div class="col-md-6 col-md-offset-3">
+        
+            <h2><%= formTitle %> - Voice Form</h2>
+
+            Enter your phone number <input type="text" value="+1" id="phone_number" /><br />
+            <button id="call_now">Call Now</button> <br />
+
+            <p>If you click call now button, the system will try to call you and read out form questions to you. Then store responses </p>
+            
+            <div id='status' class="text-left">Waiting...</div>
+            <div id='results' > 
+
+            </div>
+            
+            <script type="text/javascript">
+              var formId = "<%= formId %>";
+              $(function(){
+                  $("#call_now").click(function(){
+                    var number = $("#phone_number").val();
+                    step3_old(formId,number);
+
+                  });
+              });
+            </script>
+              
+        </div>
+      </div>
+    </div>
+  </div>
+
+<% include common/footer %>

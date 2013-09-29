@@ -2,9 +2,9 @@
 var http = require('http'),
     path = require('path'),
     express = require('express'),
-    twilio = require('twilio');
-
-var base_url = 'http://memblr.net:3000/';
+    twilio = require('twilio'),
+    db = require( __dirname + '/libs/mysql-keyval').db;
+var base_url = 'http://voiceforms.jotform.io:3000/';
  
 // Load configuration information from system environment variables.
 var TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID,
@@ -45,10 +45,74 @@ app.get('/jotform', function(request, response) {
     response.render('jotform');
 });
 
-app.post('/connect_jotform', function(request,response){
+// render our home page
+app.get('/settest', function(request, response) {
+
+
+    db.set("key1","value1",function(){
+        response.send("Key successfully set");
+    },function(err){
+        response.send("there was an error setting the key "+err);
+    });
+});
+
+// render our home page
+app.get('/get/:key', function(request, response) {
+    
+    
+    var key = request.params.key;
+
+    db.get(key,function(value){
+        response.send("Key successfully get => ",value);
+    },function(err){
+        response.send("there was an error setting the key "+err);
+    });
+});
+
+// form render
+app.get('/vform/:formId', function(request, response) {
+    var formId = request.params.formId;
+
+    //get form from db
+    db.get(formId+".meta",function(value){
+        if(value === undefined){
+            response.send("Form with given id does not exists in voice form");
+            return;
+        }
+
+        //everything ok go render voice form
+        var form = value;
+
+        //fetch form details
+        var jf = require("jotform-api-nodejs");
+
+        jf.options({
+            debug: true,
+            apiKey: form.apiKey
+        });
+
+        jf.getForm(formId)
+        .then(function(r){
+              
+            response.render("form",{
+                formId:value.formId,
+                formTitle : r.title
+            })
+
+        })
+        .fail(function(e){
+            response.send("There was an error while reading form data from jotform api");
+        });
+
+    },function(err){
+        response.send("There was an error while reading form data from db");
+    });
+});
+
+
+app.post('/create_voice_form', function(request,response){
     var apiKey = request.body.apiKey;
     var formId = request.body.formId;
-    var number = request.body.number;
 
     var jf = require("jotform-api-nodejs");
 
@@ -59,28 +123,61 @@ app.post('/connect_jotform', function(request,response){
 
     jf.getFormQuestions(formId)
     .then(function(r){
-        
-        console.log(r);
-        local_db[formId] = {
+
+        //save voice form data
+        var key = formId+".meta";
+        var value = {
+            formId:formId,
+            apiKey:apiKey,
             qs : r,
             answers : {},
-            status : 'ongoing'
-        };
-        for(key in r){
-            var q = r[key];
+            texts : {}
+        }
+        //store form details
+        db.set(key,value,function(){
+            response.send(formId);
+        },function(err){
+            response.send("ERROR "+err);
+        });
+    })
+    .fail(function(e){
+        response.send("ERROR "+e);
+    });
+
+
+});
+
+app.post('/connect_jotform', function(request,response){
+    var formId = request.body.formId;
+    var number = request.body.number;
+
+
+    db.get(formId+".meta",function(r){
+        var form = r;
+        console.log(form);
+        for(key in form.qs){
+            var q = form.qs[key];
             if(q.type == "control_textbox"){
 
                 client.makeCall({
                     to: number,
                     from: TWILIO_NUMBER,
-                    url: base_url+'get_audio/'+apiKey+'/'+formId+'/'+number+'/'+key+'/doesnotmatter'
+                    url: base_url+'get_audio/'+formId+'/'+number+'/'+key+'/doesnotmatter'
                 }, function(err, data) {
                     // When we get a response from Twilio, respond to the HTTP POST request
                     console.log('ERROR :', err);
                     if(err){
                         response.send('There was an error :' +err.message);    
                     }else{
-                         response.send('OK');    
+                        //call started create a record in db for example
+                        var stat_key = formId+".status."+number; //status text bind to formId and number
+                        db.set(stat_key,{
+                            formId:formId,
+                            number:number,
+                            status : "ongoing"
+                        },function(){
+                            response.send('OK');  
+                        });  
                     }
                     
                 });
@@ -89,117 +186,133 @@ app.post('/connect_jotform', function(request,response){
         }
 
 
-    })
-    .fail(function(e){
-        /*
-         error during request or not authenticated
-         */
     });
+    
 
 
 });
 
-app.post('/get_audio/:apiKey/:formId/:number/:qid/:pqid', function(request,response){
-    var apiKey = request.params.apiKey;
+app.post('/get_audio/:formId/:number/:qid/:pqid', function(request,response){
     var formId = request.params.formId;
     var number = request.params.number;
     var qid = request.params.qid;
     var pqid = request.params.pqid;
     var jf = require("jotform-api-nodejs");
+    var form_key = formId+".meta";
+    //get form details from db
+    db.get(form_key,function(form){
+        var qs = form.qs;
+        var answers = form.answers;
+        if(pqid != 'doesnotmatter'){
 
-    var qs = local_db[formId].qs;
-    var answers = local_db[formId].answers;
-    if(pqid != 'doesnotmatter'){
-
-        answers[pqid] = request.body.RecordingUrl;
-
-    }
-
-
-    if(qid == 'this_is_the_end'){
-
-        console.log('this is the end ',answers);
-        var twiml = new twilio.TwimlResponse();
-        twiml.say('Your voice submisson successfully received');
-        local_db[formId].status = 'done';
-
-        // Return an XML response to this request
-        response.set('Content-Type','text/xml');
-        response.send(twiml.toString());
-
-        return false;
-
-    }
-    var flag = false;
-    var next = false;
-    for(var key in qs){
-        if(key == qid){
-            flag = true;
-            continue;
+            answers[pqid] = request.body.RecordingUrl;
+            //save form
+            db.set(form_key,form);
         }
-        var q = qs[key];
-        if(flag === true){
-            if(q.type=='control_textbox'){
-                next = key;
-                break;
+
+
+        if(qid == 'this_is_the_end'){
+
+            console.log('this is the end ',answers);
+            var twiml = new twilio.TwimlResponse();
+            twiml.say('Your voice submisson successfully received');
+            // Return an XML response to this request
+            response.set('Content-Type','text/xml');
+            response.send(twiml.toString());
+            return false;
+        }
+        var flag = false;
+        var next = false;
+        for(var key in qs){
+            if(key == qid){
+                flag = true;
+                continue;
             }
+            var q = qs[key];
+            if(flag === true){
+                if(q.type=='control_textbox'){
+                    next = key;
+                    break;
+                }
+            }
+
         }
 
-    }
+        if(next === false){
+            next = 'this_is_the_end';
+        }
 
-    if(next === false){
-        next = 'this_is_the_end';
-    }
-
-    var qqq = qs[qid];
-    var twiml = new twilio.TwimlResponse();  
-     twiml.say('Please Answer by voice and push * to finish: What is the Value of '+ qqq.text);
+        var qqq = qs[qid];
+        var twiml = new twilio.TwimlResponse();  
+        twiml.say('Please Answer by voice and push * to finish: What is the Value of '+ qqq.text);
         twiml.record({
-            action : base_url+'get_audio/'+apiKey+'/'+formId+'/'+number+'/'+next+'/'+qid,
+            action : base_url+'get_audio/'+formId+'/'+number+'/'+next+'/'+qid,
             method:"POST",
             maxLength:"20",
             finishOnKey:"*",
             transcribe:false,
-            transcribeCallback:base_url+'transcribe/'+apiKey+'/'+formId+'/'+number+'/'+qid+'/'+next,
+            transcribeCallback:base_url+'transcribe/'+'/'+formId+'/'+number+'/'+qid+'/'+next,
         });
         response.set('Content-Type','text/xml');
         response.send(twiml.toString());
 
+    },function(err){
+
+    });
 
 });
 
 // handle a POST request to send a text message.  This is sent via ajax on our
 // home page
-app.post('/transcribe/:apiKey/:formId/:number/:qid/:is_end', function(request, response) {
-    var apiKey = request.params.apiKey;
+app.post('/transcribe/:formId/:number/:qid/:is_end', function(request, response) {
     var formId = request.params.formId;
     var number = request.params.number;
     var qid = request.params.qid;
     var is_end = request.params.is_end;
     var text = request.body.TranscriptionText;
-    var qs = local_db[formId].qs;
-    var qqq = qs[qid];
-    console.log('transcripton completed for ',qqq.name,'  ',text);
+    var form_key = formId+".meta";
+    //get form details from db
+    db.get(form_key,function(form){
+        var qs = form.qs;
+        var qqq = qs[qid];
+        form.texts[qid] = text;
 
-    if(is_end == 'this_is_the_end'){
-        console.log('all transcription completed!!!');
-    }
-    
-    response.send('   ');
+        console.log('transcripton completed for ',qqq.name,'  ',text);
+
+        if(is_end == 'this_is_the_end'){
+            console.log('all transcription completed!!!');
+            var stat_key = formId+".status."+number
+            db.get(stat_key,function(status){
+                status.status = 'done';
+                db.set(stat_key,status,function(){
+                    db.set(form_key,form,function(){
+                        response.send('   ');
+                    });
+                });
+            });
+        }
+        
+    });
+
+   
 });
 
-app.get('/status/:formId',function(request,response){
+app.get('/status/:formId/:number',function(request,response){
     var formId = request.params.formId;
-    var status = local_db[formId].status;
-
-    if (status == 'ongoing'){
-        response.send(JSON.stringify({status:'ongoing'}));
-    }else{
-        response.send(JSON.stringify({status:'done',answers:local_db[formId].answers,questions:local_db[formId].qs}));
-    }
+    var number = request.params.number;
+    var stat_key = formId+".status."+number;
+    var form_key = formId+".meta";
+    db.get(stat_key,function(status){
+        if (status.status == 'ongoing'){
+            response.send(JSON.stringify({status:'ongoing'}));
+        }else{
+            db.get(form_key,function(form){
+                response.send(JSON.stringify({status:'done',answers:form.answers,qs:form.qs,texts:form.texts}));
+            });
+        }
+    });
+   
 });
-
-
 
 // Create a TwiML document to provide instructions for an outbound call
 app.post('/webhook/voice', function(request, response) {

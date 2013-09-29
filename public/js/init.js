@@ -22,14 +22,14 @@ function init(){
 }
 
 //polls /status/formId about the status of conversion and submission if finished renders result audio
-function checkStatus(formId){
+function checkStatus(formId,number){
 	var iflag = false;
 	var c = 0;
 	var iii = setInterval(function(){
 		c++;
 		us('checking...');
 
-		$.get('/status/'+formId,function(response){
+		$.get('/status/'+formId+'/'+number,function(response){
 			var res = JSON.parse(response);
 			us('checked...');
 			if(res.status == 'done'){
@@ -80,25 +80,35 @@ function step2(selected){
 	
 	var apiKey = JF.getAPIKey();
 	var formId = selected[0].id;
-	var number = prompt('Which number do you want us to relay your voice phone','+905339651303');
 
-	step3(formId,apiKey,number);
+	step3(formId,apiKey);
 
 }
 
-function step3(formId,apiKey,number){
-	
-	$.post("/connect_jotform",{
+function step3(formId,apiKey){
+	$.post("/create_voice_form",{
 		formId:formId,
 		apiKey:apiKey,
+	},function(response){
+		if(response.indexOf("ERROR") === 0){
+			alert("there was an error while creating your voice form");
+			return;
+		}
+
+		document.location.href = "/vform/"+formId; //redirect user to form view page
+
+	});
+}
+
+function step3_old(formId,number){
+	$.post("/connect_jotform",{
+		formId:formId,
 		number:number
 	},function(response){
 		if(response == 'OK'){
-			checkStatus(formId);
+			checkStatus(formId,number);
 		}else{
 			us(response);
 		}
-
 	});
-
 }
