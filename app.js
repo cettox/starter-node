@@ -36,21 +36,9 @@ app.configure('development', function(){
 
 // render our home page
 app.get('/', function(request, response) {
-    response.render('index');
+    response.render('jotform');
 });
 
-// render our home page
-app.get('/twilio', function(request, response) {
-    var twilio = require('twilio');
-    var capability = new twilio.Capability(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
-
-    //Create a capability token using the TwiML app with sid "AP123"
-    capability.allowClientOutgoing('AP4040fcb1e1ce6bb19c3072c5b8ed08f2');
-    capability.allowClientIncoming('AP4040fcb1e1ce6bb19c3072c5b8ed08f2');
-    var token = capability.generate();
-
-    response.render('twil',{token:token});
-});
 
 // render our home page
 app.get('/jotform', function(request, response) {
@@ -211,47 +199,7 @@ app.get('/status/:formId',function(request,response){
     }
 });
 
-// handle a POST request to send a text message.  This is sent via ajax on our
-// home page
-app.post('/message', function(request, response) {
-    // Use the REST client to send a text message
-    client.sendSms({
-        to: request.param('to'),
-        from: TWILIO_NUMBER,
-        body: 'Good luck on your Twilio quest!'
-    }, function(err, data) {
-        // When we get a response from Twilio, respond to the HTTP POST request
-        response.send('Message is inbound!');
-    });
-});
 
-// handle a POST request to make an outbound call.  This is sent via ajax on our
-// home page
-app.post('/call', function(request, response) {
-    // Use the REST client to send a text message
-    client.makeCall({
-        to: request.param('to'),
-        from: TWILIO_NUMBER,
-        url: 'http://twimlets.com/message?Message%5B0%5D=http://demo.kevinwhinnery.com/audio/zelda.mp3'
-    }, function(err, data) {
-        // When we get a response from Twilio, respond to the HTTP POST request
-        response.send('Call incoming!');
-    });
-});
-
-// Create a TwiML document to provide instructions for an outbound call
-app.get('/hello', function(request, response) {
-    // Create a TwiML generator
-    var twiml = new twilio.TwimlResponse();
-    twiml.say('Hello there! You have successfully configured a web hook.');
-    twiml.say('Good luck on your Twilio quest!', { 
-        voice:'woman' 
-    });
-
-    // Return an XML response to this request
-    response.set('Content-Type','text/xml');
-    response.send(twiml.toString());
-});
 
 // Create a TwiML document to provide instructions for an outbound call
 app.post('/webhook/voice', function(request, response) {
@@ -280,66 +228,6 @@ app.post('/webhook/voiceap', function(request, response) {
     response.send(twiml.toString());
 });
 
-// Create a TwiML document to provide instructions for an outbound call
-app.post('/voice2', function(request, response) {
-    // Create a TwiML generator
-
-    console.log("digitsss " ,request.body.Digits);
-
-    var digit = request.body.Digits.charAt(0);
-
-
-    var twiml = new twilio.TwimlResponse();
-      
-    if(digit == '1'){
-        //record
-       c
-        return false;
-
-    }else if(digit == '2'){
-        
-        client.recordings.get(function(err,rec){
-            console.log(rec.recordings);
-
-            for(var i=0; i < rec.recordings.length; i++){
-                var recc = rec.recordings[i];
-
-                var record_url = 'http://api.twilio.com'+recc.uri.replace('.json','');  
-                twiml.say('Now playing message number '+(i+1));
-                twiml.play(record_url);   
-
-                if(i==2){break;}
-            }
-
-            response.set('Content-Type','text/xml');
-            response.send(twiml.toString());
-            return false;
-
-            
-        });
-        return false;
-
-    }
-
-    
-    var twiml = new twilio.TwimlResponse();
-    twiml.say(txt);
-
-    // Return an XML response to this request
-    response.set('Content-Type','text/xml');
-    response.send(twiml.toString());
-});
-
-app.post('/record_completed',function(request,response){
-    console.log(request.body.RecordingUrl);
-    var twiml = new twilio.TwimlResponse();
-    twiml.say('Your recording successfully saved!');
-    twiml.redirect(base_url+'webhook/voice');
-    // Return an XML response to this request
-    response.set('Content-Type','text/xml');
-    response.send(twiml.toString());
-
-});
 
 // Create a TwiML document to provide instructions for an outbound call
 app.post('/webhook/sms', function(request, response) {
@@ -347,12 +235,10 @@ app.post('/webhook/sms', function(request, response) {
     var twiml = new twilio.TwimlResponse();
     twiml.sms('Hello there! You have successfully configured a web hook.');
     
-
     // Return an XML response to this request
     response.set('Content-Type','text/xml');
     response.send(twiml.toString());
 });
-
 
 
 // Start our express app, by default on port 3000

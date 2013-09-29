@@ -1,0 +1,11 @@
+@import "http://omer.jotform.pro/landing/sharedStyles/reset.css?rev=1";
+@import "http://omer.jotform.pro/landing/sharedStyles/common-page-styles.css?rev=1";
+
+.or-link a{
+	font-size: 12px;
+	color:#bbb;
+}
+
+.dn{
+	display:none;
+}

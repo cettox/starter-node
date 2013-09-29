@@ -1,36 +1,24 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>ATransform Jotform Forms Into Voice Forms</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Bootstrap -->
-    <link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
-  </head>
-  <body>
-      <div class="jumbotron">
-        <h1>Voice Forms Made Easy</h1>
-        <p class="lead">Click following button to select one of your jotform forms to be transformed into a shiny voice form</p>
-        <p><a class="btn btn-lg btn-success" id="start" href="#">Choose Form</a></p>
-        <div id='status'>initializing</div>
+<% include common/header %>
+
+    <!-- write your content inside this div -->
+    <div class="content-container">
+      <div class="content">
+        <div class="row">
+          <div class="col-md-6 col-md-offset-3">
+            <div class="jumbotron text-center">
+              <h1>Voice Forms Made Easy</h1>
+              <p class="lead">Click following button to select one of your jotform forms to be transformed into a shiny voice form</p>
+              <p class="text-center"><a class="btn btn-lg btn-success" id="start" href="#">Demo</a></p>
+              <p class="text-center or-link" > <a href="/account" target="_self">or login to see your existing voice forms and voice submissions.</a> </p>
+              <div id='status dn' class="text-left">initializing</div>
+              <div id='results' > 
+
+              </div>
+            </div>
+           
+          </div>
+        </div>
       </div>
-      <div id='results' > 
+    </div>
 
-      </div>
-
-      
-    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="//code.jquery.com/jquery.js"></script>
-    <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script src="js/bootstrap.min.js"></script>
-    <script src='http://js.jotform.com/JotForm.js'></script>
-    <script src='http://js.jotform.com/FormPicker.js'></script>
-    <script src="js/init.js"></script>
-    <script type"text/javascript">
-      $(document).ready(function(){
-
-          init();
-
-      });
-    </script>
-  </body>
-</html>
+<% include common/footer %>

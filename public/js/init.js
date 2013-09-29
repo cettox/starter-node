@@ -13,7 +13,7 @@ function init(){
 		},function(){
 			alert('please login again');
 		});
-
+		return false;
 	});
 
 
@@ -80,7 +80,7 @@ function step2(selected){
 	
 	var apiKey = JF.getAPIKey();
 	var formId = selected[0].id;
-	var number = prompt('Which number do you want us to relay your voice phone','+1');
+	var number = prompt('Which number do you want us to relay your voice phone','+905339651303');
 
 	step3(formId,apiKey,number);
 
