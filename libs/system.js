@@ -58,6 +58,19 @@ exports.decrement = function(username,next,err){
 		}
 	});
 }
+exports.getUserForms = function(username,next,err){
+	if(next === undefined){
+		next = noop;
+	}
+	if(err == undefined){
+		err == noop;
+	}
+
+	db.find(keys.userForms(username),function(forms){
+		next(forms);
+	},err);
+
+}
 
 exports.getUser = function(username,next,err){
 	//check if user exists
@@ -84,4 +97,73 @@ exports.setUser = function(username,user,next,err){
 	db.set(user_key,user,next,err);
 }
 
+
+exports.getSubmissions = function(username,formId,number,isText,next,err){
+	console.log(next);
+	var sub_key = keys.submission(username,formId,number,isText);
+    db.get(sub_key,function(submissions){
+    	if(submissions === undefined){
+    		submissions = [];
+    		db.set(sub_key,submissions,function(){next(submissions)},err);
+    		return;
+    	}
+    	next(submissions);
+
+    },err);
+}
+
+exports.createNewSubmission = function(username,formId,number,isText,next,err){
+
+	exports.getSubmissions(username,formId,number,isText,function(submissions){
+		if(submissions.length === 0){
+			submissions.push({active:true});
+			next(submissions,0);
+			return;
+		}
+		
+		var targetIndex = submissions.length - 1;
+		var lastElem = submissions[targetIndex];
+		if("active" in lastElem){
+			if(lastElem.active === true){
+				next(submissions,targetIndex);
+				return;
+			}
+		}
+		//there is no active element in last or active element is false
+		submissions.push({active:true});
+		next(submissions,submissions.length-1);
+		console.log(submissions);
+	},err);
+
+}
+
+exports.saveSubmissions = function(username,formId,number,submissions,isText,next,err){
+	var sub_key = keys.submission(username,formId,number,isText);
+	db.set(sub_key,submissions,next,err);
+}	
+
+exports.insertDataToSubmission = function(username,formId,number,qid,data,isLast,isText,next,err){
+	exports.createNewSubmission(username,formId,number,isText,function(submissions,targetIndex){
+		submissions[targetIndex][qid] = data;
+		if(isLast === true){
+			submissions[targetIndex].active = false; 
+		}
+		exports.saveSubmissions(username,formId,number,submissions,isText,next,err);
+	},err);
+}
+
+exports.menu = [
+	{
+		"link" : "/",
+		"text" : "Home"
+	},
+	{
+		"link" : "/account/vforms",
+		"text" : "Voice Forms"
+	},
+	{
+		"link" : "/account",
+		"text" : "Account Settings"
+	},
+];
 

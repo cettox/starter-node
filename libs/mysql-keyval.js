@@ -128,11 +128,17 @@
 					release();
 					return;
 				}
-
 				if(rows.length === 0){
 					next();
-				}else{
+				}else if(rows.length === 1){
 					next(getJSON(rows[0].value));	
+				}else{
+					var ret = [];
+					for(var i = 0; i < rows.length; i++){
+						ret.push(getJSON(rows[i].value));
+					}
+
+					next(ret);
 				}
 				release();
 			});

@@ -1,0 +1,43 @@
+<% include common/header %>
+
+  <!-- write your content inside this div -->
+
+  <div class="content-container">
+    <div class="content">
+      <div class="row">
+        <div class="col-md-6 col-md-offset-3 menu-container">
+          <% include common/account-menu %>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 col-md-offset-3 jumbotron">
+        
+            <h2>Here are voice submissions of <%= form.formMeta.title%></h2> 
+            
+            <table class="submission">
+            	<thead>
+            		<tr>
+            			<th>#</th><th>Question</th><th>Answer(Text)</th><th>Answer(Voice)</th>
+            		</tr>
+            	</thead>
+            	<tbody>
+		            <% for (el in subs) { var sub = subs[el];%>
+		            	<% if(el !== "active" && el !== "number"){%>
+		            		<tr>
+		            			<td><%= el%></td><td><%= form.qs[el].text%></td><td><%=sub.text %></td><td><a href="<%=sub.voice %>">listen</a></td>
+		            		</tr>
+						<%}//endif%>
+					<% }//endfor%>
+            	</tbody>
+        	</table>
+            <script type="text/javascript">
+
+
+            </script>
+              
+        </div>
+      </div>
+    </div>
+  </div>
+
+<% include common/footer %>

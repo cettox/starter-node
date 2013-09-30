@@ -39,3 +39,32 @@
 	width: 150px;
 
 }
+.account-menu{
+	margin-top:10px;
+}
+
+.account-menu >li{
+	float: left;
+	font-size: 22px;
+	font-weight: bold;
+	margin-right: 33px;
+}
+
+.account-menu a{
+	color:white;
+}
+
+table.submission{
+	font-size: 14px;
+}
+
+.submission td{
+	padding: 5px;
+}
+
+.submission tr{
+	border-bottom:1px dotted red;
+}
+.submission tr:hover{
+	background-color: #ccc;
+}

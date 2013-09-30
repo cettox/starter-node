@@ -1,0 +1,33 @@
+<% include common/header %>
+
+  <!-- write your content inside this div -->
+
+  <div class="content-container">
+    <div class="content">
+      <div class="row">
+        <div class="col-md-6 col-md-offset-3 menu-container">
+          <% include common/account-menu %>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 col-md-offset-3 jumbotron">
+        
+            <h2>Here are your voice forms</h2> 
+            
+            <ul>
+            <% for (el in forms) { var form = forms[el];%>
+
+				<li><a href="/account/submissions/<%=form.formId%>" target="_self" ><%=form.formMeta.title%></a></li>
+			<% }//endfor%>
+            </ul>
+            <script type="text/javascript">
+
+
+            </script>
+              
+        </div>
+      </div>
+    </div>
+  </div>
+
+<% include common/footer %>
