@@ -1,0 +1,21 @@
+<% include common/header %>
+<script type="text/javascript">
+	$(function(){
+		JF.login(function(){
+			//login success
+			//get username and apiKey and store them in the cookie
+			var apiKey = JF.getAPIKey();
+			JF.initialize( {apiKey: apiKey} ); 
+			JF.getUser(function(user){
+				var username = user.username;
+				var cookie = username+":"+apiKey;
+				$.cookie('auth', cookie,{ expires: 7, path: '/' });
+				document.location.href="/account";
+			});	
+		},function(){
+			alert("You have to login & give access to voice forms in order to use the app.");
+		});
+	});
+</script>
+
+<% include common/footer %>

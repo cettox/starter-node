@@ -82,14 +82,19 @@ function step2(selected){
 	var apiKey = JF.getAPIKey();
 	var formId = selected[0].id;
 
-	step3(formId,apiKey);
+	JF.getUser(function(response){
+
+	    step3(formId,apiKey,response.username);
+	});
+	
 
 }
 
-function step3(formId,apiKey){
+function step3(formId,apiKey,username){
 	$.post("/create_voice_form",{
 		formId:formId,
 		apiKey:apiKey,
+		username:username,
 	},function(response){
 		if(response.indexOf("ERROR") === 0){
 			alert("there was an error while creating your voice form");

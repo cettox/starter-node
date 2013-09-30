@@ -3,7 +3,10 @@ var http = require('http'),
     path = require('path'),
     express = require('express'),
     twilio = require('twilio'),
-    db = require( __dirname + '/libs/mysql-keyval').db;
+    db = require( __dirname + '/libs/mysql-keyval').db,
+    system = require( __dirname + '/libs/system'),
+    keys = require( __dirname + '/libs/keys').keys;
+
 var base_url = 'http://voiceforms.jotform.io:3000/';
  
 // Load configuration information from system environment variables.
@@ -26,6 +29,7 @@ app.configure(function(){
     app.use(express.logger('dev'));
     app.use(express.bodyParser());
     app.use(express.methodOverride());
+    app.use(express.cookieParser());
     app.use(app.router);
     app.use(express.static(path.join(__dirname, 'public')));
 });
@@ -36,19 +40,11 @@ app.configure('development', function(){
 
 // render our home page
 app.get('/', function(request, response) {
-    response.render('jotform');
-});
-
-
-// render our home page
-app.get('/jotform', function(request, response) {
-    response.render('jotform');
+    response.render('jotform',{pageTitle : false});
 });
 
 // render our home page
 app.get('/settest', function(request, response) {
-
-
     db.set("key1","value1",function(){
         response.send("Key successfully set");
     },function(err){
@@ -57,16 +53,62 @@ app.get('/settest', function(request, response) {
 });
 
 // render our home page
-app.get('/get/:key', function(request, response) {
-    
-    
-    var key = request.params.key;
-
-    db.get(key,function(value){
-        response.send("Key successfully get => ",value);
+app.get('/getFreeCount/:username', function(request, response) {
+    var username = request.params.username;
+    console.log("asdasd ",system);
+    system.getFreeCountLeft(username,function(value){
+        response.send("For username = "+username+" "+value+" free tries left");
     },function(err){
         response.send("there was an error setting the key "+err);
     });
+});
+
+// render our home page
+app.get('/use/:username', function(request, response) {
+    var username = request.params.username;
+    system.decrement(username,function(value){
+        response.send("For username = "+username+" free tries decremented, new count is "+value);
+    },function(err){
+        response.send("For username = "+username+"free tries not available");
+    });
+});
+
+// render our home page
+app.get('/account', function(request, response) {
+    var auth = request.cookies.auth;
+    if(auth === undefined){
+        //redirect user to account/login
+        response.send("<script>document.location.href='/account/login'</script>");
+        return;
+    }
+
+    
+
+    var tmp = auth.split(":");
+    var username = tmp[0];
+    var apiKey = tmp[1];
+
+    system.getUser(username,function(user){
+        user.apiKey = apiKey;
+        //handle twilio_id cookie
+        var twilio_id = request.cookies.twilio_id;
+        if(twilio_id !== undefined){
+            user.twilio = {
+                id : twilio_id,
+            }
+        }
+
+        system.setUser(username,user,function(){
+            console.log("USER ",user);
+            response.render('account',{pageTitle:"Account Page",user:user});
+
+        });
+    });
+
+});
+
+app.get('/account/login',function(request,response){
+    response.render('login',{pageTitle:"Please login to your jotform account"});
 });
 
 // form render
@@ -74,7 +116,7 @@ app.get('/vform/:formId', function(request, response) {
     var formId = request.params.formId;
 
     //get form from db
-    db.get(formId+".meta",function(value){
+    db.find(formId,function(value){
         if(value === undefined){
             response.send("Form with given id does not exists in voice form");
             return;
@@ -93,11 +135,20 @@ app.get('/vform/:formId', function(request, response) {
 
         jf.getForm(formId)
         .then(function(r){
-              
-            response.render("form",{
-                formId:value.formId,
-                formTitle : r.title
-            })
+            
+            //get freeTry lefts too
+            system.getFreeCountLeft(form.username,function(count){
+                response.render("form-demo",{
+                    formId:value.formId,
+                    formTitle : r.title,
+                    pageTitle : "Voice form demo for ["+r.title+"]",
+                    freeCount : count,
+                });
+            },function(){
+                res.send("There is an error while counting free count left for given user");
+            });
+
+            
 
         })
         .fail(function(e){
@@ -109,10 +160,10 @@ app.get('/vform/:formId', function(request, response) {
     });
 });
 
-
 app.post('/create_voice_form', function(request,response){
     var apiKey = request.body.apiKey;
     var formId = request.body.formId;
+    var username = request.body.username;
 
     var jf = require("jotform-api-nodejs");
 
@@ -125,14 +176,16 @@ app.post('/create_voice_form', function(request,response){
     .then(function(r){
 
         //save voice form data
-        var key = formId+".meta";
+        var key = keys.vform(username,formId);
         var value = {
             formId:formId,
             apiKey:apiKey,
             qs : r,
             answers : {},
-            texts : {}
+            texts : {},
+            username : username,
         }
+
         //store form details
         db.set(key,value,function(){
             response.send(formId);
@@ -143,53 +196,54 @@ app.post('/create_voice_form', function(request,response){
     .fail(function(e){
         response.send("ERROR "+e);
     });
-
-
 });
 
 app.post('/connect_jotform', function(request,response){
     var formId = request.body.formId;
     var number = request.body.number;
 
-
-    db.get(formId+".meta",function(r){
+    db.find(formId,function(r){
         var form = r;
         console.log(form);
-        for(key in form.qs){
-            var q = form.qs[key];
-            if(q.type == "control_textbox"){
-
-                client.makeCall({
-                    to: number,
-                    from: TWILIO_NUMBER,
-                    url: base_url+'get_audio/'+formId+'/'+number+'/'+key+'/doesnotmatter'
-                }, function(err, data) {
-                    // When we get a response from Twilio, respond to the HTTP POST request
-                    console.log('ERROR :', err);
-                    if(err){
-                        response.send('There was an error :' +err.message);    
-                    }else{
-                        //call started create a record in db for example
-                        var stat_key = formId+".status."+number; //status text bind to formId and number
-                        db.set(stat_key,{
-                            formId:formId,
-                            number:number,
-                            status : "ongoing"
-                        },function(){
-                            response.send('OK');  
-                        });  
-                    }
-                    
-                });
-                return false;
+        //first check freecount
+        system.getFreeCountLeft(form.username,function(count){
+            if(count < 1){
+                response.send("ERROR : you have used all of your free voice call credit. Please link your twilio account from <a href='/account'>here.</a>");
+                return;
             }
-        }
 
+            for(key in form.qs){
+                var q = form.qs[key];
+                if(q.type == "control_textbox"){
 
+                    client.makeCall({
+                        to: number,
+                        from: TWILIO_NUMBER,
+                        url: base_url+'get_audio/'+formId+'/'+number+'/'+key+'/doesnotmatter'
+                    }, function(err, data) {
+                        // When we get a response from Twilio, respond to the HTTP POST request
+                        console.log('ERROR :', err);
+                        if(err){
+                            response.send('There was an error :' +err.message);    
+                        }else{
+                            //call started create a record in db for example
+                            var stat_key = formId+".status."+number; //status text bind to formId and number
+                            db.set(stat_key,{
+                                formId:formId,
+                                number:number,
+                                status : "ongoing"
+                            },function(){
+                                response.send('OK');  
+                            });  
+                        }
+                        
+                    });
+                    return false;
+                }
+            }
+
+        });
     });
-    
-
-
 });
 
 app.post('/get_audio/:formId/:number/:qid/:pqid', function(request,response){
@@ -198,21 +252,25 @@ app.post('/get_audio/:formId/:number/:qid/:pqid', function(request,response){
     var qid = request.params.qid;
     var pqid = request.params.pqid;
     var jf = require("jotform-api-nodejs");
-    var form_key = formId+".meta";
     //get form details from db
-    db.get(form_key,function(form){
+    db.find(formId,function(form){
         var qs = form.qs;
         var answers = form.answers;
         if(pqid != 'doesnotmatter'){
-
             answers[pqid] = request.body.RecordingUrl;
             //save form
-            db.set(form_key,form);
+            db.set(keys.vform(form.username,formId),form);
+        }else{
+            //this is first ping to this endpoint, decrement free usage from user later do not decrement if user uses his twilio account
+            system.decrement(form.username,function(){},function(){});
+            //also create a submission key for this form
+            var sub_key = keys.submission(form.username,formId,number);
+            //this key will hold the array of submissions
+            db.get
+
         }
 
-
         if(qid == 'this_is_the_end'){
-
             console.log('this is the end ',answers);
             var twiml = new twilio.TwimlResponse();
             twiml.say('Your voice submisson successfully received');
@@ -221,6 +279,7 @@ app.post('/get_audio/:formId/:number/:qid/:pqid', function(request,response){
             response.send(twiml.toString());
             return false;
         }
+
         var flag = false;
         var next = false;
         for(var key in qs){
@@ -235,7 +294,6 @@ app.post('/get_audio/:formId/:number/:qid/:pqid', function(request,response){
                     break;
                 }
             }
-
         }
 
         if(next === false){
@@ -270,18 +328,19 @@ app.post('/transcribe/:formId/:number/:qid/:is_end', function(request, response)
     var qid = request.params.qid;
     var is_end = request.params.is_end;
     var text = request.body.TranscriptionText;
-    var form_key = formId+".meta";
+    
     //get form details from db
-    db.get(form_key,function(form){
+    db.find(formId,function(form){
         var qs = form.qs;
         var qqq = qs[qid];
         form.texts[qid] = text;
-
+        var form_key = keys.vform(form.username,formId);
         console.log('transcripton completed for ',qqq.name,'  ',text);
 
         if(is_end == 'this_is_the_end'){
             console.log('all transcription completed!!!');
-            var stat_key = formId+".status."+number
+            
+            var stat_key = keys.formSubmissionStatKey(formId,number);
             db.get(stat_key,function(status){
                 status.status = 'done';
                 db.set(stat_key,status,function(){
@@ -291,27 +350,22 @@ app.post('/transcribe/:formId/:number/:qid/:is_end', function(request, response)
                 });
             });
         }
-        
     });
-
-   
 });
 
 app.get('/status/:formId/:number',function(request,response){
     var formId = request.params.formId;
     var number = request.params.number;
-    var stat_key = formId+".status."+number;
-    var form_key = formId+".meta";
+    var stat_key = keys.formSubmissionStatKey(formId,number);
     db.get(stat_key,function(status){
         if (status.status == 'ongoing'){
             response.send(JSON.stringify({status:'ongoing'}));
         }else{
-            db.get(form_key,function(form){
+            db.find(formId,function(form){
                 response.send(JSON.stringify({status:'done',answers:form.answers,qs:form.qs,texts:form.texts}));
             });
         }
     });
-   
 });
 
 // Create a TwiML document to provide instructions for an outbound call
@@ -328,6 +382,37 @@ app.post('/webhook/voice', function(request, response) {
     // Return an XML response to this request
     response.set('Content-Type','text/xml');
     response.send(twiml.toString());
+});
+
+// Create a TwiML document to provide instructions for an outbound call
+app.get('/twilio/authorize', function(request, response) {
+    var accountSID = request.query.AccountSid;
+    response.cookie('twilio_id', accountSID, { maxAge: 900000, httpOnly: false});
+    response.send('<script>document.location.href="/account"</script>');
+});
+
+//this call will immediately remove users twilio id from db
+app.get('/removeTwilio',function(request,response){
+    var auth = request.cookies.auth;
+    if(auth === undefined){
+        //redirect user to account/login
+        response.send("<script>document.location.href='/account/login'</script>");
+        return;
+    }
+
+    tmp = auth.split(":");
+    var username = tmp[0];
+    var apiKey = tmp[1];
+
+    system.getUser(username,function(user){
+        user.twilio = false;
+        response.clearCookie("twilio_id");
+        console.log("USER AFTER REMOVAL ",user);
+        system.setUser(username,user,function(){
+            response.send("<script>document.location.href='/account'</script>");
+            return;
+        });
+    });
 });
 
 // Create a TwiML document to provide instructions for an outbound call

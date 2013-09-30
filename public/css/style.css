@@ -9,3 +9,33 @@
 .dn{
 	display:none;
 }
+
+.content{
+	
+}
+
+.content h2{
+	
+}
+
+.content div{
+	margin-bottom: 10px;
+}
+
+#call_now{
+	margin:10px 0;
+	width: 100px;
+	height: 35px;
+	font-weight: bold;
+	font-size: 18px;
+}
+
+#phone_number{
+	margin-left: 15px;
+	padding-left: 10px;
+	padding-top: 3px;
+	padding-bottom: 3px;
+	font-size: 14px;
+	width: 150px;
+
+}

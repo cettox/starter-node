@@ -4,7 +4,7 @@
   <div class="content-container">
     <div class="content">
       <div class="row">
-        <div class="col-md-6 col-md-offset-3">
+        <div class="col-md-6 col-md-offset-3 jumbotron">
         
             <h2><%= formTitle %> - Voice Form</h2>
 
@@ -12,6 +12,7 @@
             <button id="call_now">Call Now</button> <br />
 
             <p>If you click call now button, the system will try to call you and read out form questions to you. Then store responses </p>
+            <p>You have <b><%= freeCount %> free</b> voice form calls left in your account. After that, you can continue using system by entering your twilio account details <a href="/account">here.</a></p>
             
             <div id='status' class="text-left">Waiting...</div>
             <div id='results'> 
@@ -20,11 +21,12 @@
             
             <script type="text/javascript">
               var formId = "<%= formId %>";
+              var useLeft = "<%= freeCount%>";
               $(function(){
                   $("#call_now").click(function(){
                     var number = $("#phone_number").val();
                     step3_old(formId,number);
-
+                   
                   });
               });
             </script>

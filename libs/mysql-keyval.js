@@ -72,7 +72,6 @@
 				release();
 			});
 		});
-		
 	}
 
 	function set(key,value,next,err){
@@ -110,13 +109,40 @@
 				release();
 			});
 		});
+	}
+	//instead of equal checks this applies LIKE '%key%'
+	function find(key,next,err){
+		if(next === undefined){
+			next = noop;
+		}
+		if(err == undefined){
+			err == noop;
+		}
 
+		getDB(function(con,release){
+			var query = "select `value` from "+tblname+" where `key` LIKE "+con.escape('%'+key+'%')+"";
+			console.log(query);
+			con.query(query,function(e, rows, fields){
+				if(e){
+					err(e);
+					release();
+					return;
+				}
 
+				if(rows.length === 0){
+					next();
+				}else{
+					next(getJSON(rows[0].value));	
+				}
+				release();
+			});
+		});
 	}
 
 	var obj = {
 		get:get,
-		set:set
+		set:set,
+		find:find
 	}
 
 	exports.db = obj; //export functionality
