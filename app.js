@@ -233,6 +233,45 @@ app.get('/vform/:formId', function(request, response) {
         response.send("There was an error while reading form data from db");
     });
 });
+// form render with no markup
+app.get('/vform/clean/:formId', function(request, response) {
+    var formId = request.params.formId;
+
+    //get form from db
+    db.find(keys.formSearch(formId),function(value){
+        if(value === undefined){
+            response.send("Form with given id does not exists in voice form");
+            return;
+        }
+        //everything ok go render voice form
+        var form = value;
+        //fetch form details
+        var jf = require("jotform-api-nodejs");
+        jf.options({
+            debug: true,
+            apiKey: form.apiKey
+        });
+        jf.getForm(formId)
+        .then(function(r){
+            //get freeTry lefts too
+            system.getFreeCountLeft(form.username,function(count){
+                response.render("form-embed",{
+                    formId:value.formId,
+                    formTitle : r.title,
+                    pageTitle : "Voice form demo for ["+r.title+"]",
+                    freeCount : count,
+                });
+            },function(){
+                res.send("There is an error while counting free count left for given user");
+            });
+        })
+        .fail(function(e){
+            response.send("There was an error while reading form data from jotform api");
+        });
+    },function(err){
+        response.send("There was an error while reading form data from db");
+    });
+});
 
 app.post('/create_voice_form', function(request,response){
     var apiKey = request.body.apiKey;

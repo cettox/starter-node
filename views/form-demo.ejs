@@ -4,16 +4,16 @@
   <div class="content-container">
     <div class="content">
       <div class="row">
-        <div class="col-md-6 col-md-offset-3 jumbotron">
+        <div class="col-md-8 col-md-offset-2 jumbotron">
         
-            <h2><%= formTitle %> - Voice Form</h2>
+            <h2><%= formTitle %> - Voice Form Demo Page</h2>
 
-            Enter your phone number <input type="text" value="+1" id="phone_number" /><br />
-            <button id="call_now">Call Now</button> <br />
+            <p>Enter your phone number <input type="text" value="+1" id="phone_number" /></p>
+            <p style="text-align:center"> <button id="call_now">Call Now</button> </p>
 
             <p>If you click call now button, the system will try to call you and read out form questions to you. Then store responses </p>
             <p>You have <b><%= freeCount %> free</b> voice form calls left in your account. After that, you can continue using system by entering your twilio account details <a href="/account">here.</a></p>
-            
+            <p><a href="#embedcode" id="embedcode_trigger">get Embed Code</a> </p>
             <div id='status' class="text-left">Waiting...</div>
             <div id='results'> 
 
@@ -26,11 +26,30 @@
                   $("#call_now").click(function(){
                     var number = $("#phone_number").val();
                     step3_old(formId,number);
-                   
                   });
+
+                  $("#embedcode_trigger").leanModal();
+                  $("#preview_trigger").leanModal();
               });
             </script>
-              
+            <div id="embedcode" class="dn">
+                Here is the embed code <br />
+                <textarea>
+                  <script type="text/javascript" src="http://voiceforms.jotform.io:3000/js/vform.embed.js"></script>
+                  <script type="text/javascript">
+                    VFORM.embed("<%=formId%>");
+                  </script>
+                </textarea> <br />
+
+                <a href="#preview" id="preview_trigger">preview</a>
+            </div>
+            <div id="preview" class="dn">
+                  <script type="text/javascript" src="http://voiceforms.jotform.io:3000/js/vform.embed.js"></script>
+                  <script type="text/javascript">
+                    VFORM.embed("<%=formId%>");
+                  </script>
+
+            </div>
         </div>
       </div>
     </div>

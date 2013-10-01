@@ -36,7 +36,7 @@
 	padding-top: 3px;
 	padding-bottom: 3px;
 	font-size: 14px;
-	width: 150px;
+	width: 160px;
 
 }
 .account-menu{
@@ -68,3 +68,17 @@ table.submission{
 .submission tr:hover{
 	background-color: #ccc;
 }
+
+#embedcode{
+	width:600px;
+	height: 600px;
+	background-color:white;
+}
+
+#embedcode > textarea{
+	width:500px;
+	height: 400px;
+	margin-left: 50px;
+	background-color:white;
+}
+

@@ -22,7 +22,7 @@ function init(){
 }
 
 //polls /status/formId about the status of conversion and submission if finished renders result audio
-function checkStatus(formId,number){
+function checkStatus(formId,number,callback){
 	var iflag = false;
 	var c = 0;
 	var iii = setInterval(function(){
@@ -33,10 +33,15 @@ function checkStatus(formId,number){
 			var res = JSON.parse(response);
 			us('checked...');
 			if(res.status == 'done'){
-				us('Form Voice Submitted. Preparing results.');
-				setTimeout(function(){
-					renderResults(res.answers,res.qs,res.texts);
-				},300);
+				if(callback === undefined){
+					us('Form Voice Submitted. Preparing results.');
+					setTimeout(function(){
+						renderResults(res.answers,res.qs,res.texts);
+					},300);	
+				}else{
+					callback(true);
+				}
+				
 				iflag = true
 			}else{
 				us('still in progress!');
@@ -113,6 +118,19 @@ function step3_old(formId,number){
 	},function(response){
 		if(response == 'OK'){
 			checkStatus(formId,number);
+		}else{
+			us(response);
+		}
+	});
+}
+
+function step3_embed(formId,number,callback){
+	$.post("/connect_jotform",{
+		formId:formId,
+		number:number
+	},function(response){
+		if(response == 'OK'){
+			checkStatus(formId,number,callback);
 		}else{
 			us(response);
 		}

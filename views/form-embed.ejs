@@ -1,0 +1,28 @@
+<html>
+<head>
+  <title>Voice Forms</title>
+  <base href="http://voiceforms.jotform.io:3000/" target="_blank" />
+  <script src="//code.jquery.com/jquery.js"></script>
+  <script src="js/init.js"></script>
+</head>
+<body>
+<h2><%= formTitle %> Voice Form</h2>
+<p>Enter your phone number to access this form via phone :</p>
+<p><input type="text" value="+1" id="phone_number" /> - <button id="call_now">Call Now</button></p>
+<div id='status' class="text-left">Waiting...</div>
+<script type="text/javascript">
+var formId = "<%= formId %>";
+var useLeft = "<%= freeCount%>";
+$(function(){
+    $("#call_now").click(function(){
+      var number = $("#phone_number").val();
+      step3_embed(formId,number,function(){
+        alert("voice submission completed");
+      });
+    });
+});
+</script>
+           
+</body>
+</html>
+
