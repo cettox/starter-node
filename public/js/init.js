@@ -136,3 +136,11 @@ function step3_embed(formId,number,callback){
 		}
 	});
 }
+
+function closeModalTmp(modal_id){
+	$("#lean_overlay").fadeOut(0);
+    $("#"+modal_id).css({
+        "display": "none"
+    });
+
+}
