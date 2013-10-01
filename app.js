@@ -217,6 +217,7 @@ app.get('/vform/:formId', function(request, response) {
                     formTitle : r.title,
                     pageTitle : "Voice form demo for ["+r.title+"]",
                     freeCount : count,
+                    menu : system.menu,
                 });
             },function(){
                 res.send("There is an error while counting free count left for given user");

@@ -4,6 +4,11 @@
   <div class="content-container">
     <div class="content">
       <div class="row">
+        <div class="col-md-8 col-md-offset-2 menu-container">
+          <% include common/account-menu %>
+        </div>
+      </div>
+      <div class="row">
         <div class="col-md-8 col-md-offset-2 jumbotron">
         
             <h2><%= formTitle %> - Voice Form Demo Page</h2>
@@ -30,16 +35,26 @@
 
                   $("#embedcode_trigger").leanModal();
                   $("#preview_trigger").leanModal();
+
+                  $("#embedcode>textarea").focus(function() {
+                    var $this = $(this);
+                    $this.select();
+
+                    // Work around Chrome's little problem
+                    $this.mouseup(function() {
+                        // Prevent further mouseup intervention
+                        $this.unbind("mouseup");
+                        return false;
+                    });
+                });
               });
             </script>
             <div id="embedcode" class="dn">
                 Here is the embed code <br />
-                <textarea>
-                  <script type="text/javascript" src="http://voiceforms.jotform.io:3000/js/vform.embed.js"></script>
-                  <script type="text/javascript">
-                    VFORM.embed("<%=formId%>");
-                  </script>
-                </textarea> <br />
+<textarea><script type="text/javascript" src="http://voiceforms.jotform.io:3000/js/vform.embed.js"></script>
+<script type="text/javascript">
+  VFORM.embed("<%=formId%>");
+</script></textarea> <br />
 
                 <a href="#preview" id="preview_trigger" onclick="closeModalTmp('embedcode');">preview</a>
             </div>

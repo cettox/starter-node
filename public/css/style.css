@@ -2,8 +2,9 @@
 @import "http://omer.jotform.pro/landing/sharedStyles/common-page-styles.css?rev=1";
 
 .or-link a{
-	font-size: 12px;
-	color:#bbb;
+	color: #787878;
+    font-size: 14px;
+    font-weight: bold;
 }
 
 .dn{
@@ -73,13 +74,15 @@ table.submission{
 	width:600px;
 	height: 600px;
 	background-color:white;
+	padding: 10px;
 }
 
 #embedcode > textarea{
 	width:500px;
 	height: 400px;
-	margin-left: 50px;
+	margin-left: 40px;
 	background-color:white;
+	font-size: 12px;
 }
 
 #preview{
