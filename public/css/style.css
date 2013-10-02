@@ -11,12 +11,25 @@
 	display:none;
 }
 
+.oh{
+	overflow: hidden;
+}
+
+.fl{
+	float:left;
+}
+
+.fr{
+	float:right;
+}
+
+
 .content{
 	
 }
 
 .content h2{
-	
+	margin-bottom: 25px;
 }
 
 .content div{
@@ -93,6 +106,29 @@ table.submission{
 }
 
 .content-container .content{
-	color:white;
+	background-color: #4B5353;
+    margin-left: auto;
+    margin-right: auto;
+    padding-bottom: 25px;
+    padding-top: 5px;
+    width: 980px;
+    color:white;
+}
+
+.content-container .content a,{
+	color:blue;
+}
+
+.glyphicon{
+	margin-top: 3px;
+}
+
+.ico{
+	display:inline-block;
+	margin-left: 10px;
+}
+
+.cp:hover{
+	cursor: pointer;
 }
 

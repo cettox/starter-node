@@ -16,8 +16,11 @@
             
             <ul>
             <% for (el in subs) { var sub = subs[el];%>
-				<li><a href="/account/submission/<%= form.formId%>/<%=sub.callId%>" target="_self" ><%=sub.number%> - <%= sub.callDetails.created_at %></a></li>
-			<% }//endfor%>
+      				<li class="oh"><div class="fl" style="margin-right:50px;width:400px"><%=sub.index%>. <%=sub.number%> - <%= sub.callDetails.created_at %></a></div>
+                  <span class="glyphicon glyphicon-eye-open cp ico fl" onclick="document.location.href='/account/submission/<%= form.formId%>/<%=sub.callId%>'" title="view submission"></span>
+
+              </li>
+      			<% }//endfor%>
             </ul>
             <script type="text/javascript">
 

@@ -16,11 +16,19 @@
             
             <ul>
               <% for (el in forms) { var form = forms[el];%>
-        				<li><a href="/account/submissions/<%=form.formId%>" target="_self" ><%=form.formMeta.title%></a></li>
+        				<li class="oh">
+                  <div class="fl" style="margin-right:50px;width:400px"><%=form.formMeta.title%></div>
+                    <span class="glyphicon glyphicon-eye-open cp ico fl" onclick="document.location.href='/vform/<%= form.formId%>'" title="View Form"></span>
+                    <span class="glyphicon glyphicon-envelope cp ico fl" onclick="document.location.href='/account/submissions/<%= form.formId%>'" title="View submissions"></span>
+
+                </li>
         			<% }//endfor%>
+              <li><button id="add_new_form">Add New Form</button></li>
             </ul>
             <script type="text/javascript">
-
+              $("#add_new_form").click(function(){
+                start_auth_and_form_picker();
+              });
             </script>
               
         </div>

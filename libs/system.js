@@ -17,14 +17,21 @@ exports.getFreeCountLeft = function(username,next,err){
 	if(err == undefined){
 		err == noop;
 	}
-
-	var freeCountKey = keys.freeCountKey(username);
-	db.get(freeCountKey,function(count){
-		if(count === undefined){
-			//oops there is no count given yet give it
-			db.set(freeCountKey,initial_count,function(){next(initial_count)},err);
+	//if user has connected twilio account return 100 to by pass trial credits
+	exports.getUser(username,function(user){
+		if(user.twilio !== false){
+			next(100);
 		}else{
-			next(count);
+			//user.twilio is false go for freeAccountCheck
+			var freeCountKey = keys.freeCountKey(username);
+			db.get(freeCountKey,function(count){
+				if(count === undefined){
+					//oops there is no count given yet give it
+					db.set(freeCountKey,initial_count,function(){next(initial_count)},err);
+				}else{
+					next(count);
+				}
+			},err);
 		}
 	},err);
 };
@@ -153,6 +160,7 @@ exports.getNewCallId = function(formId,number){
 	return shasum.digest('hex');
 }
 
+
 exports.menu = [
 	{
 		"link" : "/",
@@ -167,4 +175,19 @@ exports.menu = [
 		"text" : "Account Settings"
 	},
 ];
+
+exports.cleanNumber = function(number){
+	var cleanChars = ['(',')',' '];
+	for(var i = 0; i< cleanChars.length;i++){
+		var cc = cleanChars[i];
+		number = removeChar(number,cc);
+	}
+	return number;
+}
+
+
+//private functions
+function removeChar(str,needle){
+	return str.split(needle).join("");
+}
 

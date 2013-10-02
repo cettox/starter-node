@@ -2,24 +2,56 @@ function init(){
 
 
 	$("#start").click(function(){
-
-		JF.login(function(){
-
-			JF.FormPicker({
-				title : "Please choose one of your forms",
-				onSelect : step2
-			});
-
-		},function(){
-			alert('please login again');
-		});
-		return false;
+		start_auth_and_form_picker();
 	});
 
+	soundManager.setup({
 
+	  // location: path to SWF files, as needed (SWF file name is appended later.)
+	  url: '/sm/swf/',
 
+	  
+	  // flashVersion: 9,
+	  // optional: use 100% HTML5 mode where available
+	  // preferFlash: false,
+
+	  // use soundmanager2-nodebug-jsmin.js, or disable debug mode (enabled by default) after development/testing
+	  debugMode: true,
+
+	  // good to go: the onready() callback
+
+	  onready: function() {
+
+	    // SM2 has started - now you can create and play sounds!
+	    console.log("sm ready");
+	  },
+
+	  // optional: ontimeout() callback for handling start-up failure
+
+	  ontimeout: function() {
+
+	    // Hrmm, SM2 could not start. Missing SWF? Flash blocked? Show an error, etc.?
+	    // See the flashblock demo when you want to start getting fancy.
+	    console.log("sm timeouted");
+	  }
+
+	});
 
 }
+
+function start_auth_and_form_picker(){
+	JF.login(function(){
+		JF.FormPicker({
+			title : "Please choose one of your forms",
+			onSelect : step2
+		});
+
+	},function(){
+		alert('please login again');
+	});
+	return false;
+}
+
 
 //polls /status/formId about the status of conversion and submission if finished renders result audio
 function checkStatus(callId,formId,number,callback){
@@ -72,7 +104,7 @@ function renderResults(answers, questions,texts){
 		var q = questions[i];
 		var text =texts[i];
 		console.log('inside the loop ', alink, q.text);
-		html += 'Q: '+q.text+' : Text = '+text+' ,<a href="'+alink+'" target="_blank">Audio</a> <br />';
+		html += 'Q: '+q.text+' : Text = '+text+' ,<a href="'+alink+'" target="_blank" onclick="playSound(\''+alink+'\');return false;">Audio</a> <br />';
 
 	}
 	console.log('final html ',html);
@@ -91,7 +123,16 @@ function step2(selected){
 
 	    step3(formId,apiKey,response.username);
 	});
-	
+}
+
+function playSound(link){
+	var mySound = soundManager.createSound({
+      id: link,
+      url: link,
+      onload: function() { console.log('sound loaded!' +link, this); }
+    });
+
+    mySound.play();
 
 }
 

@@ -113,7 +113,7 @@ app.get('/account/vforms',function(request,response){
     var apiKey = tmp[1];
 
     system.getUserForms(username,function(forms){
-        console.log("Forms ",forms);
+        
         if(forms !== undefined){
             if(("formId" in forms)){
                 forms = [forms];
@@ -131,22 +131,28 @@ app.get('/account/submissions/:formId',function(request,response){
         //get submissions
         db.find(keys.submissions(formId),function(submissions){
             if(submissions){
-                console.log(submissions)
+                
                 if("number" in submissions[Object.keys(submissions)[0]]){
                     submissions = [submissions];
                 }
             }
             var raw_subs = [];
+            var ccc = 1;
             for(var i = 0; i < submissions.length;i++){
                 var sub_for_spec_num = submissions[i];
                 for(var callId in sub_for_spec_num){
                     var submiss = sub_for_spec_num[callId];
                     submiss.callId = callId;
+                    var moment = require('moment');
+                    console.log(submiss.callDetails.created_at);
+                    submiss.index = ccc;
+                    submiss.callDetails.created_at = moment.unix(submiss.callDetails.created_at).fromNow();
                     raw_subs.push(submiss);
+                    ccc++;
                 }
             }
 
-            console.log("raw subs ",raw_subs);
+           
 
             //response.send(JSON.stringify(submissions)+'\n\n\n'+JSON.stringify(raw_subs));
             response.render('account-submissions',{pageTitle:"Your Voice Forms",menu:system.menu,form:form,subs:raw_subs});
@@ -327,7 +333,7 @@ app.post('/create_voice_form', function(request,response){
 
 app.post('/connect_jotform', function(request,response){
     var formId = request.body.formId;
-    var number = request.body.number;
+    var number = system.cleanNumber(request.body.number);
 
     db.find(keys.formSearch(formId),function(r){
         var form = r;
@@ -340,52 +346,63 @@ app.post('/connect_jotform', function(request,response){
 
             var give_error = true;
 
-            for(key in form.qs){
-                var q = form.qs[key];
-                if(q.type == "control_textbox"){
-
-                    //create a callID 
-                    var callId = system.getNewCallId(formId,number);
-                    give_error = false;
-                    client.makeCall({
-                        to: number,
-                        from: TWILIO_NUMBER,
-                        url: base_url+'get_audio/'+callId+'/'+formId+'/'+number+'/'+key+'/doesnotmatter',
-                        statusCallback : base_url+'status_get_audio/'+callId+'/'+formId+'/'+number+'/'+key+'/doesnotmatter',
-
-                    }, function(err, data) {
-                        // When we get a response from Twilio, respond to the HTTP POST request
-                        if(err){
-                            response.send('There was an error :' +err.message);    
-                        }else{
-                            //call started create a record in db for example
-                            var stat_key = keys.formSubmissionStatKey(formId,number,callId); //status text bind to formId and number
-                            db.set(stat_key,{
-                                formId:formId,
-                                number:number,
-                                status : "ongoing"
-                            },function(){
-                                response.send('OK:'+callId);
-                                return;
-                            });  
-                        }
-                        
-                    });
-                   break;
+            //check user and if he/she has twilio account connected use different client
+            system.getUser(form.username,function(user){
+                var client_to_use = client;
+                if(user.twilio !== false){
+                    console.log(form.username +" has got his twilio account setup, using his credentials ");
+                    client_to_use = new twilio(user.twilio.id,TWILIO_AUTH_TOKEN); //use users twilio account and charge it instead of ours
                 }
-            }
-            if(give_error){
-                response.send("ERROR: your form's content does not include compatible questions with voice forms. Please try a form containing text fields.");    
-            }
-            
 
+                for(key in form.qs){
+                    var q = form.qs[key];
+                    if(q.type == "control_textbox"){
+
+                        //create a callID 
+                        var callId = system.getNewCallId(formId,number);
+                        give_error = false;
+
+                        client_to_use.makeCall({
+                            to: number,
+                            from: TWILIO_NUMBER,
+                            url: base_url+'get_audio/'+callId+'/'+formId+'/'+number+'/'+key+'/doesnotmatter',
+                            statusCallback : base_url+'status_get_audio/'+callId+'/'+formId+'/'+number+'/'+key+'/doesnotmatter',
+                        }, function(err, data) {
+                            // When we get a response from Twilio, respond to the HTTP POST request
+                            if(err){
+                                response.send('There was an error :' +err.message);    
+                            }else{
+                                //call started create a record in db for example
+                                var stat_key = keys.formSubmissionStatKey(formId,number,callId); //status text bind to formId and number
+                                db.set(stat_key,{
+                                    formId:formId,
+                                    number:number,
+                                    status : "ongoing"
+                                },function(){
+                                    response.send('OK:'+callId);
+                                    return;
+                                });
+                            }
+                        });
+                       break;
+                    }
+                }
+                if(give_error){
+                    response.send("ERROR: your form's content does not include compatible questions with voice forms. Please try a form containing text fields.");    
+                }
+
+
+            },function(){
+                response.send("ERROR: could not fetch user details from db.");
+                return;
+            });
         },function(){response.send("ERROR on checking free usage");});
     },function(){response.send("ERROR on getting form details")});
 });
 
 app.post('/get_audio/:callId/:formId/:number/:qid/:pqid', function(request,response){
     var formId = request.params.formId;
-    var number = request.params.number;
+    var number = system.cleanNumber(request.params.number);
     var callId = request.params.callId;
     var qid = request.params.qid;
     var pqid = request.params.pqid;
@@ -466,7 +483,7 @@ app.post('/get_audio/:callId/:formId/:number/:qid/:pqid', function(request,respo
 // this will end the call
 app.post('/status_get_audio/:callId/:formId/:number/:qid/:pqid', function(request,response){
     var formId = request.params.formId;
-    var number = request.params.number;
+    var number = system.cleanNumber(request.params.number);
     var callId = request.params.callId;
     var qid = request.params.qid;
     var pqid = request.params.pqid;
@@ -495,7 +512,7 @@ app.post('/status_get_audio/:callId/:formId/:number/:qid/:pqid', function(reques
 // home page
 app.post('/transcribe/:callId/:formId/:number/:qid/:is_end', function(request, response) {
     var formId = request.params.formId;
-    var number = request.params.number;
+    var number = system.cleanNumber(request.params.number);
     var callId = request.params.callId;
     var qid = request.params.qid;
     var is_end = request.params.is_end;
@@ -523,7 +540,7 @@ app.post('/transcribe/:callId/:formId/:number/:qid/:is_end', function(request, r
 
 app.get('/status/:callId/:formId/:number',function(request,response){
     var formId = request.params.formId;
-    var number = request.params.number;
+    var number = system.cleanNumber(request.params.number);
     var callId = request.params.callId;
     var stat_key = keys.formSubmissionStatKey(formId,number,callId); 
     db.get(stat_key,function(status){
