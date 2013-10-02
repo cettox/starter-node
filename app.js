@@ -336,10 +336,17 @@ app.post('/connect_jotform', function(request,response){
             for(key in form.qs){
                 var q = form.qs[key];
                 if(q.type == "control_textbox"){
+
+                    //create a callID 
+                    var callId = system.getNewCallId(formId,number);
+                    
+
                     client.makeCall({
                         to: number,
                         from: TWILIO_NUMBER,
-                        url: base_url+'get_audio/'+formId+'/'+number+'/'+key+'/doesnotmatter'
+                        url: base_url+'get_audio/'+callId+'/'+formId+'/'+number+'/'+key+'/doesnotmatter',
+                        statusCallback : base_url+'status_get_audio/'+callId+'/'+formId+'/'+number+'/'+key+'/doesnotmatter',
+
                     }, function(err, data) {
                         // When we get a response from Twilio, respond to the HTTP POST request
                         if(err){
@@ -365,9 +372,10 @@ app.post('/connect_jotform', function(request,response){
     },function(){response.send("ERROR on getting form details")});
 });
 
-app.post('/get_audio/:formId/:number/:qid/:pqid', function(request,response){
+app.post('/get_audio/callId/:formId/:number/:qid/:pqid', function(request,response){
     var formId = request.params.formId;
     var number = request.params.number;
+    var callId = request.params.callId;
     var qid = request.params.qid;
     var pqid = request.params.pqid;
     var jf = require("jotform-api-nodejs");
@@ -400,15 +408,6 @@ app.post('/get_audio/:formId/:number/:qid/:pqid', function(request,response){
             response.set('Content-Type','text/xml');
             response.send(twiml.toString());
 
-            db.get(stat_key,function(status){ //finish it here do not await transcribe since it sucks
-                status.status = 'done';
-                db.set(stat_key,status,function(){
-                    db.set(form_key,form,function(){
-                        response.send('   ');
-                    });
-                });
-            });
-
             return false;
         }
 
@@ -436,12 +435,12 @@ app.post('/get_audio/:formId/:number/:qid/:pqid', function(request,response){
         var twiml = new twilio.TwimlResponse();  
         twiml.say('What is the Value of '+ qqq.text);
         twiml.record({
-            action : base_url+'get_audio/'+formId+'/'+number+'/'+next+'/'+qid,
+            action : base_url+'get_audio/'+callId+'/'+formId+'/'+number+'/'+next+'/'+qid,
             method:"POST",
             maxLength:"20",
             finishOnKey:"*",
             transcribe:true,
-            transcribeCallback:base_url+'transcribe/'+formId+'/'+number+'/'+qid+'/'+next,
+            transcribeCallback:base_url+'transcribe/'+callId+'/'+formId+'/'+number+'/'+qid+'/'+next,
         });
         response.set('Content-Type','text/xml');
         response.send(twiml.toString());
@@ -452,11 +451,41 @@ app.post('/get_audio/:formId/:number/:qid/:pqid', function(request,response){
 
 });
 
-// handle a POST request to send a text message.  This is sent via ajax on our
-// home page
-app.post('/transcribe/:formId/:number/:qid/:is_end', function(request, response) {
+// also keep track of the call
+// this will end the call
+app.post('/status_get_audio/:callId/:formId/:number/:qid/:pqid', function(request,response){
     var formId = request.params.formId;
     var number = request.params.number;
+    var callId = request.params.callId;
+    var qid = request.params.qid;
+    var pqid = request.params.pqid;
+    var stat_key = keys.formSubmissionStatKey(formId,number);
+    
+    db.find(keys.formSearch(formId),function(form){
+        var form_key = keys.vform(form.username,formId);
+        db.get(stat_key,function(status){ //finish it here do not await transcribe since it sucks
+            status.status = 'done';
+            //also store call details
+            system.insertDataToSubmission(form.username,formId,number,"callDetails",{duration:request.body.CallDuration},false,false,function(){},function(){console.log("err4")});    
+
+            db.set(stat_key,status,function(){
+                db.set(form_key,form,function(){
+                    response.send('   ');
+                });
+            });
+        });
+
+    });
+
+
+});
+
+// handle a POST request to send a text message.  This is sent via ajax on our
+// home page
+app.post('/transcribe/:callId/:formId/:number/:qid/:is_end', function(request, response) {
+    var formId = request.params.formId;
+    var number = request.params.number;
+    var callId = request.params.callId;
     var qid = request.params.qid;
     var is_end = request.params.is_end;
     var text = request.body.TranscriptionText;
@@ -467,13 +496,12 @@ app.post('/transcribe/:formId/:number/:qid/:is_end', function(request, response)
         var qqq = qs[qid];
         form.texts[qid] = text;
         var form_key = keys.vform(form.username,formId);
-        console.log('transcripton completed for ',qqq.name,'  ',text);
+        console.log('transcripton completed for ',qqq.text,'  ',text);
         system.insertDataToSubmission(form.username,formId,number,qid,{text:text,audio:request.body.RecordingUrl},is_end == 'this_is_the_end',true,function(){},function(){console.log("err2")});
 
         if(is_end == 'this_is_the_end'){
             console.log('all transcription completed!!!');
             system.insertDataToSubmission(form.username,formId,number,"number",number,false,true,function(){},function(){console.log("err4")}); //store number in db too
-            var stat_key = keys.formSubmissionStatKey(formId,number);
             return; //bypass here
         }
     });
@@ -482,16 +510,20 @@ app.post('/transcribe/:formId/:number/:qid/:is_end', function(request, response)
         
 });
 
-app.get('/status/:formId/:number',function(request,response){
+app.get('/status/:callId/:formId/:number',function(request,response){
     var formId = request.params.formId;
     var number = request.params.number;
+    var callId = request.params.callId;
     var stat_key = keys.formSubmissionStatKey(formId,number);
     db.get(stat_key,function(status){
         if (status.status == 'ongoing'){
             response.send(JSON.stringify({status:'ongoing'}));
         }else{
             console.log("status changed to done ",status);
+            
+
             db.find(keys.formSearch(formId),function(form){
+
                 response.send(JSON.stringify({status:'done',answers:form.answers,qs:form.qs,texts:form.texts}));
             });
         }

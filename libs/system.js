@@ -6,6 +6,7 @@
 var db = require( __dirname + '/mysql-keyval').db;
 var keys = require( __dirname + '/keys').keys;
 var initial_count = 3;
+var crypto = require('crypto');
 
 function noop(){}
 
@@ -112,15 +113,13 @@ exports.getSubmissions = function(username,formId,number,isText,next,err){
     },err);
 }
 
-exports.createNewSubmission = function(username,formId,number,isText,next,err){
-
+exports.createNewSubmission = function(username,formId,number,isText,next,err){-
 	exports.getSubmissions(username,formId,number,isText,function(submissions){
 		if(submissions.length === 0){
 			submissions.push({active:true});
 			next(submissions,0);
 			return;
-		}
-		
+		}-
 		var targetIndex = submissions.length - 1;
 		var lastElem = submissions[targetIndex];
 		if("active" in lastElem){
@@ -150,6 +149,19 @@ exports.insertDataToSubmission = function(username,formId,number,qid,data,isLast
 		}
 		exports.saveSubmissions(username,formId,number,submissions,isText,next,err);
 	},err);
+}
+
+/*
+	creates and returns a sha1 hash from formId, number and current date
+	this callId will be assigned to individual calls and used to keep track of individual
+	record and transcribe responses eminated from that call.
+*/
+exports.getNewCallId = function(formId,number){
+	var d=new Date();
+	var dateString=d.toUTCString(); 
+	var shasum = crypto.createHash('sha1');
+	shasum.update(formId+"-"+number+"-"+dateString);
+	return shasum.digest('hex');
 }
 
 exports.menu = [
