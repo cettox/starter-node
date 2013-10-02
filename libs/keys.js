@@ -16,13 +16,13 @@ exports.keys = {
     freeCountKey: function(username){
     	return username+'.freeCount';
     },
-    formSubmissionStatKey: function(formId,number){
-    	return formId+".status."+number;
+    formSubmissionStatKey: function(formId,number,callId){
+    	return formId+".status."+number+".status."+callId;
     },
     submission : function(username,formId,number,isText){
     	if(isText === undefined){isText = false;}
-    	console.log("submission key equals => ",username+'.s'+(isText?'':'v')+'.'+formId+'.s'+(isText?'':'v')+'.'+number+'.s'+(isText?'':'v')+'.data');
-    	return  username+'.s'+(isText?'':'v')+'.'+formId+'.s'+(isText?'':'v')+'.'+number+'.s'+(isText?'':'v')+'.data';
+        var ret = username+'.s'+(isText?'':'v')+'.'+formId+'.s'+(isText?'':'v')+'.'+number+'.s'+(isText?'':'v')+'.data';
+    	return  ret;
     },
     submissions : function(formId,isText){
     	if(isText === undefined){isText = false;}

@@ -16,7 +16,7 @@
             
             <ul>
             <% for (el in subs) { var sub = subs[el];%>
-				<li><a href="/account/submission/<%= form.formId%>/<%=el%>" target="_self" ><%=sub.number%></a></li>
+				<li><a href="/account/submission/<%= form.formId%>/<%=sub.callId%>" target="_self" ><%=sub.number%> - <%= sub.callDetails.created_at %></a></li>
 			<% }//endfor%>
             </ul>
             <script type="text/javascript">

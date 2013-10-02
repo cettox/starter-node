@@ -131,19 +131,22 @@ app.get('/account/submissions/:formId',function(request,response){
         //get submissions
         db.find(keys.submissions(formId),function(submissions){
             if(submissions){
-                if("active" in submissions[0]){
+                console.log(submissions)
+                if("number" in submissions[Object.keys(submissions)[0]]){
                     submissions = [submissions];
                 }
             }
             var raw_subs = [];
             for(var i = 0; i < submissions.length;i++){
                 var sub_for_spec_num = submissions[i];
-                for(var j = 0; j<sub_for_spec_num.length; j++){
-                    var submiss = sub_for_spec_num[j];
+                for(var callId in sub_for_spec_num){
+                    var submiss = sub_for_spec_num[callId];
+                    submiss.callId = callId;
                     raw_subs.push(submiss);
                 }
             }
 
+            console.log("raw subs ",raw_subs);
 
             //response.send(JSON.stringify(submissions)+'\n\n\n'+JSON.stringify(raw_subs));
             response.render('account-submissions',{pageTitle:"Your Voice Forms",menu:system.menu,form:form,subs:raw_subs});
@@ -152,29 +155,31 @@ app.get('/account/submissions/:formId',function(request,response){
     },function(){response.send("Error fetching form details");});
 });
 
-app.get('/account/submission/:formId/:subId',function(request,response){
+app.get('/account/submission/:formId/:callId',function(request,response){
     var formId = request.params.formId;
     var subId = request.params.subId;
-
+    var callId = request.params.callId;
     //get formDetails
     db.find(keys.formSearch(formId),function(form){
         //get submissions
         db.find(keys.submissions(formId),function(submissions){
             if(submissions){
-                if("active" in submissions[0]){
+                if("number" in submissions[Object.keys(submissions)[0]]){
                     submissions = [submissions];
                 }
             }
             var raw_subs = [];
             for(var i = 0; i < submissions.length;i++){
                 var sub_for_spec_num = submissions[i];
-                for(var j = 0; j<sub_for_spec_num.length; j++){
-                    var submiss = sub_for_spec_num[j];
-                    raw_subs.push(submiss);
+                for(var callId2 in sub_for_spec_num){
+                    if(callId2 == callId){
+                        var submiss = sub_for_spec_num[callId];
+                        raw_subs.push(submiss);
+                    }
                 }
             }
             //response.send(JSON.stringify(submissions)+'\n\n\n'+JSON.stringify(raw_subs));
-            response.render('account-submission',{pageTitle:"Your Voice Forms",menu:system.menu,form:form,subs:raw_subs[subId]});
+            response.render('account-submission',{pageTitle:"Your Voice Forms",menu:system.menu,form:form,subs:raw_subs[0]});
         });
 
     },function(){response.send("Error fetching form details");});
@@ -333,14 +338,15 @@ app.post('/connect_jotform', function(request,response){
                 return;
             }
 
+            var give_error = true;
+
             for(key in form.qs){
                 var q = form.qs[key];
                 if(q.type == "control_textbox"){
 
                     //create a callID 
                     var callId = system.getNewCallId(formId,number);
-                    
-
+                    give_error = false;
                     client.makeCall({
                         to: number,
                         from: TWILIO_NUMBER,
@@ -353,26 +359,31 @@ app.post('/connect_jotform', function(request,response){
                             response.send('There was an error :' +err.message);    
                         }else{
                             //call started create a record in db for example
-                            var stat_key = formId+".status."+number; //status text bind to formId and number
+                            var stat_key = keys.formSubmissionStatKey(formId,number,callId); //status text bind to formId and number
                             db.set(stat_key,{
                                 formId:formId,
                                 number:number,
                                 status : "ongoing"
                             },function(){
-                                response.send('OK');  
+                                response.send('OK:'+callId);
+                                return;
                             });  
                         }
                         
                     });
-                    return false;
+                   break;
                 }
             }
+            if(give_error){
+                response.send("ERROR: your form's content does not include compatible questions with voice forms. Please try a form containing text fields.");    
+            }
+            
 
         },function(){response.send("ERROR on checking free usage");});
     },function(){response.send("ERROR on getting form details")});
 });
 
-app.post('/get_audio/callId/:formId/:number/:qid/:pqid', function(request,response){
+app.post('/get_audio/:callId/:formId/:number/:qid/:pqid', function(request,response){
     var formId = request.params.formId;
     var number = request.params.number;
     var callId = request.params.callId;
@@ -385,18 +396,18 @@ app.post('/get_audio/callId/:formId/:number/:qid/:pqid', function(request,respon
         var qs = form.qs;
         var answers = form.answers;
         var form_key = keys.vform(form.username,formId);
-        var stat_key = keys.formSubmissionStatKey(formId,number);
+        var stat_key = keys.formSubmissionStatKey(formId,number,callId); 
         if(pqid != 'doesnotmatter'){
             answers[pqid] = request.body.RecordingUrl;
             //save form
             db.set(keys.vform(form.username,formId),form);
-            system.insertDataToSubmission(form.username,formId,number,pqid,{text:"Awaiting",audio:request.body.RecordingUrl},qid == 'this_is_the_end',false,function(){},function(){console.log("err2")});
+            system.insertDataToSubmission(callId,form.username,formId,number,pqid,{audio:request.body.RecordingUrl},false,function(){},function(){console.log("err2")});
            
         }else{
             //this is first ping to this endpoint, decrement free usage from user later do not decrement if user uses his twilio account
             system.decrement(form.username,function(){},function(){});
             //store number in the submissions array
-            system.insertDataToSubmission(form.username,formId,number,"number",number,false,false,function(){},function(){console.log("err4")}); //store number in db too
+            system.insertDataToSubmission(callId,form.username,formId,number,"number",number,false,function(){},function(){console.log("err4")}); //store number in db too
            
         }
 
@@ -459,14 +470,14 @@ app.post('/status_get_audio/:callId/:formId/:number/:qid/:pqid', function(reques
     var callId = request.params.callId;
     var qid = request.params.qid;
     var pqid = request.params.pqid;
-    var stat_key = keys.formSubmissionStatKey(formId,number);
+    var stat_key = keys.formSubmissionStatKey(formId,number,callId); 
     
     db.find(keys.formSearch(formId),function(form){
         var form_key = keys.vform(form.username,formId);
         db.get(stat_key,function(status){ //finish it here do not await transcribe since it sucks
             status.status = 'done';
-            //also store call details
-            system.insertDataToSubmission(form.username,formId,number,"callDetails",{duration:request.body.CallDuration},false,false,function(){},function(){console.log("err4")});    
+            //also store call details duration/date
+            system.insertDataToSubmission(callId,form.username,formId,number,"callDetails",{duration:request.body.CallDuration,created_at:Math.round((new Date()).getTime() / 1000)},false,function(){},function(){console.log("err4")});    
 
             db.set(stat_key,status,function(){
                 db.set(form_key,form,function(){
@@ -497,11 +508,11 @@ app.post('/transcribe/:callId/:formId/:number/:qid/:is_end', function(request, r
         form.texts[qid] = text;
         var form_key = keys.vform(form.username,formId);
         console.log('transcripton completed for ',qqq.text,'  ',text);
-        system.insertDataToSubmission(form.username,formId,number,qid,{text:text,audio:request.body.RecordingUrl},is_end == 'this_is_the_end',true,function(){},function(){console.log("err2")});
+        system.insertDataToSubmission(callId,form.username,formId,number,qid,{text:text,audio:request.body.RecordingUrl},true,function(){},function(){console.log("err2")});
 
         if(is_end == 'this_is_the_end'){
             console.log('all transcription completed!!!');
-            system.insertDataToSubmission(form.username,formId,number,"number",number,false,true,function(){},function(){console.log("err4")}); //store number in db too
+            system.insertDataToSubmission(callId,form.username,formId,number,"number",number,true,function(){},function(){console.log("err4")}); //store number in db too
             return; //bypass here
         }
     });
@@ -514,7 +525,7 @@ app.get('/status/:callId/:formId/:number',function(request,response){
     var formId = request.params.formId;
     var number = request.params.number;
     var callId = request.params.callId;
-    var stat_key = keys.formSubmissionStatKey(formId,number);
+    var stat_key = keys.formSubmissionStatKey(formId,number,callId); 
     db.get(stat_key,function(status){
         if (status.status == 'ongoing'){
             response.send(JSON.stringify({status:'ongoing'}));

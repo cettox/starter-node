@@ -22,14 +22,14 @@ function init(){
 }
 
 //polls /status/formId about the status of conversion and submission if finished renders result audio
-function checkStatus(formId,number,callback){
+function checkStatus(callId,formId,number,callback){
 	var iflag = false;
 	var c = 0;
 	var iii = setInterval(function(){
 		c++;
 		us('checking...');
 
-		$.get('/status/'+formId+'/'+number,function(response){
+		$.get('/status/'+callId+'/'+formId+'/'+number,function(response){
 			var res = JSON.parse(response);
 			us('checked...');
 			if(res.status == 'done'){
@@ -116,8 +116,8 @@ function step3_old(formId,number){
 		formId:formId,
 		number:number
 	},function(response){
-		if(response == 'OK'){
-			checkStatus(formId,number);
+		if(response.indexOf('OK') === 0){
+			checkStatus(response.split(':')[1],formId,number);
 		}else{
 			us(response);
 		}
@@ -129,8 +129,8 @@ function step3_embed(formId,number,callback){
 		formId:formId,
 		number:number
 	},function(response){
-		if(response == 'OK'){
-			checkStatus(formId,number,callback);
+		if(response.indexOf('OK') === 0){
+			checkStatus(response.split(':')[1],formId,number,callback);
 		}else{
 			us(response);
 		}

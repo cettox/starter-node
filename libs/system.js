@@ -100,11 +100,12 @@ exports.setUser = function(username,user,next,err){
 
 
 exports.getSubmissions = function(username,formId,number,isText,next,err){
-	console.log(next);
+	
 	var sub_key = keys.submission(username,formId,number,isText);
     db.get(sub_key,function(submissions){
     	if(submissions === undefined){
-    		submissions = [];
+    		submissions = {};
+
     		db.set(sub_key,submissions,function(){next(submissions)},err);
     		return;
     	}
@@ -113,25 +114,16 @@ exports.getSubmissions = function(username,formId,number,isText,next,err){
     },err);
 }
 
-exports.createNewSubmission = function(username,formId,number,isText,next,err){-
+exports.createNewSubmission = function(callId,username,formId,number,isText,next,err){-
 	exports.getSubmissions(username,formId,number,isText,function(submissions){
-		if(submissions.length === 0){
-			submissions.push({active:true});
-			next(submissions,0);
+		if(callId in submissions){
+			next(submissions,callId);
 			return;
-		}-
-		var targetIndex = submissions.length - 1;
-		var lastElem = submissions[targetIndex];
-		if("active" in lastElem){
-			if(lastElem.active === true){
-				next(submissions,targetIndex);
-				return;
-			}
 		}
-		//there is no active element in last or active element is false
-		submissions.push({active:true});
-		next(submissions,submissions.length-1);
-		console.log(submissions);
+
+		submissions[callId] = {};
+		next(submissions,callId);
+		return;
 	},err);
 
 }
@@ -141,12 +133,9 @@ exports.saveSubmissions = function(username,formId,number,submissions,isText,nex
 	db.set(sub_key,submissions,next,err);
 }	
 
-exports.insertDataToSubmission = function(username,formId,number,qid,data,isLast,isText,next,err){
-	exports.createNewSubmission(username,formId,number,isText,function(submissions,targetIndex){
+exports.insertDataToSubmission = function(callId,username,formId,number,qid,data,isText,next,err){
+	exports.createNewSubmission(callId,username,formId,number,isText,function(submissions,targetIndex){
 		submissions[targetIndex][qid] = data;
-		if(isLast === true){
-			submissions[targetIndex].active = false; 
-		}
 		exports.saveSubmissions(username,formId,number,submissions,isText,next,err);
 	},err);
 }

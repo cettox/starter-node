@@ -22,7 +22,7 @@
             	</thead>
             	<tbody>
 		            <% for (el in subs) { var sub = subs[el];%>
-		            	<% if(el !== "active" && el !== "number"){%>
+		            	<% if(el !== "callDetails" && el !== "number"){%>
 		            		<tr>
 		            			<td><%= el%></td><td><%= form.qs[el].text%></td><td><%=sub.text %></td><td><a href="<%=sub.voice %>">listen</a></td>
 		            		</tr>

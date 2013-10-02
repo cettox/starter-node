@@ -81,7 +81,6 @@
 		if(err == undefined){
 			err == noop;
 		}
-
 		if(typeof value != "string"){
 			value = JSON.stringify(value);
 		}
@@ -121,7 +120,6 @@
 
 		getDB(function(con,release){
 			var query = "select `value` from "+tblname+" where `key` LIKE "+con.escape('%'+key+'%')+"";
-			console.log(query);
 			con.query(query,function(e, rows, fields){
 				if(e){
 					err(e);
