@@ -43,6 +43,14 @@ app.get('/', function(request, response) {
     response.render('jotform',{pageTitle : false});
 });
 
+// test puroposes
+app.get('/test', function(request, response) {
+    
+    client.outgoingCallerIds.get(function(err, cids) {
+        console.log(cids);
+    });
+});
+
 // render our home page
 app.get('/settest', function(request, response) {
     db.set("key1","value1",function(){
@@ -578,7 +586,29 @@ app.post('/webhook/voice', function(request, response) {
 app.get('/twilio/authorize', function(request, response) {
     var accountSID = request.query.AccountSid;
     response.cookie('twilio_id', accountSID, { maxAge: 900000, httpOnly: false});
-    response.send('<script>document.location.href="/account"</script>');
+    response.render('twilio-get-number',{accountSID:accountSID,pageTitle:"Set your Twilio number",menu:system.menu});
+
+    //response.send('<script>document.location.href="/account"</script>');
+});
+
+app.get('/twilio/validatePhoneNumber/:accountSID/:number',function(request,response){
+    var accountSID = request.params.accountSID;
+    var number = request.params.number;
+    console.log(accountSID,TWILIO_AUTH_TOKEN);
+    var new_client = twilio(accountSID,TWILIO_AUTH_TOKEN);
+
+    new_client.sendSms({
+        to:number, // Any number Twilio can deliver to
+        from: number, // A number you bought from Twilio and can use for outbound communication
+        body: 'test message.' // body of the SMS message
+    }, function(err, responseData) { //this function is executed when a response is received from Twilio
+        if (!err) { 
+            response.send('OK');
+        }else{
+            console.log("ERR ",err);
+            response.send('ERROR validating your Twilio Phone Number. Are you sure this is a valid Twilio phone number? <br />('+err.message+')');
+        }
+    });
 });
 
 //this call will immediately remove users twilio id from db

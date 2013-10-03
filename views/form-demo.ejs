@@ -33,8 +33,8 @@
                     step3_old(formId,number);
                   });
 
-                  $("#embedcode_trigger").leanModal();
-                  $("#preview_trigger").leanModal();
+                  $("#embedcode_trigger").leanModal({closeButton:".modal_close"});
+                  $("#preview_trigger").leanModal({closeButton:".modal_close"});
 
                   $("#embedcode>textarea").focus(function() {
                     var $this = $(this);
@@ -50,15 +50,25 @@
               });
             </script>
             <div id="embedcode" class="dn">
-                Here is the embed code <br />
+              <div class="modal_title_cont oh">
+                  <div class="fl modal_title"> Here is the embed code</div>
+                  <div class="fr modal_close cp">x</div>
+              </div>
+               
 <textarea><script type="text/javascript" src="http://voiceforms.jotform.io:3000/js/vform.embed.js"></script>
 <script type="text/javascript">
   VFORM.embed("<%=formId%>");
 </script></textarea> <br />
-
-                <a href="#preview" id="preview_trigger" onclick="closeModalTmp('embedcode');">preview</a>
+              <div style="width: 128px; margin: 10px auto;">
+                <a href="#preview" id="preview_trigger" onclick="closeModalTmp('embedcode');">Preview</a>
+                <a href="" id="copy_trigger" onclick="$('#embedcode textarea').focus();return false;" style="margin-left:20px;">Copy</a>
+              </div>
             </div>
             <div id="preview" class="dn">
+              <div class="modal_title_cont oh">
+                  <div class="fl modal_title"> Preview</div>
+                  <div class="fr modal_close cp">x</div>
+              </div>
                   <script type="text/javascript" src="http://voiceforms.jotform.io:3000/js/vform.embed.js"></script>
                   <script type="text/javascript">
                     VFORM.embed("<%=formId%>");

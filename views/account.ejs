@@ -13,7 +13,7 @@
         <div class="col-md-8 col-md-offset-2">
             <h2>Your Account Settings</h2> 
             <% if(!user.twilio){ %>
-                <p>You did not seem to connect your Twilio Account. It is Strongly suggested that you do this by clicking following button </p>
+                <div class="alert alert-warning">You did not seem to connect your Twilio Account. It is Strongly suggested that you do this by clicking following button </div>
                 <p>
                   <style type="text/css">
                     #twilio-connect-button {
@@ -22,13 +22,12 @@
                     }
                     #twilio-connect-button:hover { background-position: 0 34px; }
                   </style>
-                  <a href="https://www.twilio.com/authorize/CNd485d8e4969ebe77c2cd45a2c2670124" id="twilio-connect-button" target="_self"></a> 
+                  <a href="https://www.twilio.com/authorize/CN0519792d6d207b61b9048089131ec827" id="twilio-connect-button" target="_self"></a>
+                        
                 </p>
             <%}else{%>
-              <p>You have already connected your Twilio account. Your Twilio AccountSID is <%= user.twilio.id %>. Click <a href="/removeTwilio" target="_self">here</a> to disconnect.</p>
+              <div class="alert alert-success">You have already connected your Twilio account. <br />Your Twilio AccountSID is <%= user.twilio.id %>. <br />Click <a href="/removeTwilio" target="_self">here</a> to disconnect.</div>
             <%}%>
-
-            <p>Visit <a href="/my_voice_forms">My Voice Forms</a> section to see list of your voice forms, voice submissions and even create some more voice forms.</p>
             
             
             <script type="text/javascript">

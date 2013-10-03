@@ -3,39 +3,9 @@ function init(){
 
 	$("#start").click(function(){
 		start_auth_and_form_picker();
+		return false;
 	});
 
-	soundManager.setup({
-
-	  // location: path to SWF files, as needed (SWF file name is appended later.)
-	  url: '/sm/swf/',
-
-	  
-	  // flashVersion: 9,
-	  // optional: use 100% HTML5 mode where available
-	  // preferFlash: false,
-
-	  // use soundmanager2-nodebug-jsmin.js, or disable debug mode (enabled by default) after development/testing
-	  debugMode: true,
-
-	  // good to go: the onready() callback
-
-	  onready: function() {
-
-	    // SM2 has started - now you can create and play sounds!
-	    console.log("sm ready");
-	  },
-
-	  // optional: ontimeout() callback for handling start-up failure
-
-	  ontimeout: function() {
-
-	    // Hrmm, SM2 could not start. Missing SWF? Flash blocked? Show an error, etc.?
-	    // See the flashblock demo when you want to start getting fancy.
-	    console.log("sm timeouted");
-	  }
-
-	});
 
 }
 
@@ -68,7 +38,7 @@ function checkStatus(callId,formId,number,callback){
 				if(callback === undefined){
 					us('Form Voice Submitted. Preparing results.');
 					setTimeout(function(){
-						renderResults(res.answers,res.qs,res.texts);
+						renderResults(callId,formId);
 					},300);	
 				}else{
 					callback(true);
@@ -94,19 +64,10 @@ function us(str){
 	$('#status').html(str);
 }
 
-function renderResults(answers, questions,texts){
-	console.log(answers,questions);
-	
+function renderResults(callId,formId){	
 	var html = '';
 
-	for(var i in answers){
-		var alink = answers[i];
-		var q = questions[i];
-		var text =texts[i];
-		console.log('inside the loop ', alink, q.text);
-		html += 'Q: '+q.text+' : Text = '+text+' ,<a href="'+alink+'" target="_blank" onclick="playSound(\''+alink+'\');return false;">Audio</a> <br />';
-
-	}
+	html = "Submission received. Click <a target='_self' href='/account/submission/"+formId+"/"+callId+"'>here</a> to see the results.";
 	console.log('final html ',html);
 
 	$('#results').html(html);

@@ -25,7 +25,7 @@
 
 
 .content{
-	
+	min-height: 400px;
 }
 
 .content h2{
@@ -85,7 +85,6 @@ table.submission{
 
 #embedcode{
 	width:600px;
-	height: 600px;
 	background-color:white;
 	padding: 10px;
 	color:black;
@@ -100,14 +99,21 @@ table.submission{
 	background-color:white;
 	font-size: 12px;
 	margin-top:10px;
-	margin-bottom:10px;
+	margin-bottom:  10px;
+	
 }
 
 #preview{
 	width:600px;
-	height: 600px;
 	background-color:white;
 	padding: 20px;
+	color:black;
+
+}
+
+#preview iframe{
+	width:500px;
+	margin-left: 32px;
 }
 
 .content-container .content{
@@ -137,3 +143,26 @@ table.submission{
 	cursor: pointer;
 }
 
+.modal_title{
+	font-size: 22px;
+    font-weight: bold;
+    margin-left: 40px;
+}
+
+.modal_close{
+	font-size: 16px;
+	font-weight: bold;
+	width:20px;
+	height: 23px;
+	text-align: center;
+}
+.modal_close:hover{
+	background-color:#ddd;
+}
+.modal_close:active{
+	margin-left:1px;
+	margin-top:1px;
+	background-color:#bbb;
+	width:19px;
+	height: 22px;
+}

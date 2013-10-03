@@ -1,0 +1,45 @@
+<% include common/header %>
+
+  <!-- write your content inside this div -->
+
+  <div class="content-container">
+    <div class="content">
+      <div class="row">
+        <div class="col-md-8 col-md-offset-2 menu-container">
+         	
+         	<p style="margin-top:30px;">What is your Twilio Phone Number : <input type="text" id="twilio-phone"/> <button id="save">Save</button> <span id="stat"></span></p>
+         	<p>You can find your Twilio phone number or create one <a href="https://www.twilio.com/user/account/phone-numbers/incoming" target="_blank">here</a></p>
+
+        </div>
+      </div>
+      
+    </div>
+  </div>
+  <script type="text/javascript">
+  	var accountSID = "<%= accountSID%>";
+  	$(function(){
+  		var c = 0;
+  		$("#save").click(function(){
+  			
+  			var num = $('#twilio-phone').val();
+  			if(num === undefined ||num === null || num.length < 5){
+  				$('#stat').html("Please supply a valid twilio phone number!"+(c++));
+  				return false;
+  			}
+
+  			$.get('/twilio/validatePhoneNumber/'+accountSID+'/'+num,function(response){
+  				if(response === "OK"){
+  					$('#stat').html('Your phone number validated, now redirecting you to account page!');
+  					setTimeout(function(){
+  						document.location.href="/account";
+  					},1000);
+  				}else{
+  					$('#stat').html(response);
+  				}
+  			});
+
+  		});
+  	});
+  	
+  </script>
+<% include common/footer %>
