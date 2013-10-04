@@ -10,6 +10,9 @@ exports.keys = {
     userForms : function(username){
     	return '.'+username+'.fm';
     },
+    allForms : function(){
+        return '.fm';
+    },
     user : function(username){
     	return username+'.meta';
     },

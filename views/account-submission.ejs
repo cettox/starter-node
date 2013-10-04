@@ -21,10 +21,10 @@
             		</tr>
             	</thead>
             	<tbody>
-		            <% for (el in subs) { var sub = subs[el];%>
+		            <% for (el in subs) { var sub = subs[el];if(vsubs){var vsub = vsubs[el];}%>
 		            	<% if(el !== "callDetails" && el !== "number"){%>
 		            		<tr>
-		            			<td><%= el%></td><td><%= form.qs[el].text%></td><td><%=sub.text %></td><td><a href="#" onclick="$('#audio-<%=el%>').toggle();return false;">listen</a> 
+		            			<td><%= el%></td><td><%= form.qs[el].text%></td><td><%if(vsub){ %><%= vsub.text %> <% }%></td><td><a href="#" onclick="$('#audio-<%=el%>').toggle();return false;">listen</a> 
                                                                                                                           <div id="audio-<%=el%>" class="dn">
                                                                                                                                 <audio src="<%=sub.audio %>.mp3" preload="auto" />
                                                                                                                           </div></td>

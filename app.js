@@ -131,6 +131,30 @@ app.get('/account/vforms',function(request,response){
     });
 });
 
+app.get('/admin/account/vforms/easyonetwothree/veryverysecretstring',function(request,response){
+    var auth = request.cookies.auth;
+    if(auth === undefined){
+        //redirect user to account/login
+        response.send("<script>document.location.href='/account/login'</script>");
+        return;
+    }
+
+    var tmp = auth.split(":");
+    var username = tmp[0];
+    var apiKey = tmp[1];
+
+
+    system.getAllForms(function(forms){
+        
+        if(forms !== undefined){
+            if(("formId" in forms)){
+                forms = [forms];
+            }    
+        }
+        response.render('account-forms',{pageTitle:"Your Voice Forms",menu:system.menu,forms:forms});
+    });
+});
+
 app.get('/account/submissions/:formId',function(request,response){
     var formId = request.params.formId;
 
@@ -138,30 +162,27 @@ app.get('/account/submissions/:formId',function(request,response){
     db.find(keys.formSearch(formId),function(form){
         //get submissions
         db.find(keys.submissions(formId),function(submissions){
+            var raw_subs = [];
             if(submissions){
                 
                 if("number" in submissions[Object.keys(submissions)[0]]){
                     submissions = [submissions];
                 }
-            }
-            var raw_subs = [];
-            var ccc = 1;
-            for(var i = 0; i < submissions.length;i++){
-                var sub_for_spec_num = submissions[i];
-                for(var callId in sub_for_spec_num){
-                    var submiss = sub_for_spec_num[callId];
-                    submiss.callId = callId;
-                    var moment = require('moment');
-                    console.log(submiss.callDetails.created_at);
-                    submiss.index = ccc;
-                    submiss.callDetails.created_at = moment.unix(submiss.callDetails.created_at).fromNow();
-                    raw_subs.push(submiss);
-                    ccc++;
+                var ccc = 1;
+                for(var i = 0; i < submissions.length;i++){
+                    var sub_for_spec_num = submissions[i];
+                    for(var callId in sub_for_spec_num){
+                        var submiss = sub_for_spec_num[callId];
+                        submiss.callId = callId;
+                        var moment = require('moment');
+                        console.log(submiss.callDetails.created_at);
+                        submiss.index = ccc;
+                        submiss.callDetails.created_at = moment.unix(submiss.callDetails.created_at).fromNow();
+                        raw_subs.push(submiss);
+                        ccc++;
+                    }
                 }
             }
-
-           
-
             //response.send(JSON.stringify(submissions)+'\n\n\n'+JSON.stringify(raw_subs));
             response.render('account-submissions',{pageTitle:"Your Voice Forms",menu:system.menu,form:form,subs:raw_subs});
         });
@@ -192,8 +213,28 @@ app.get('/account/submission/:formId/:callId',function(request,response){
                     }
                 }
             }
-            //response.send(JSON.stringify(submissions)+'\n\n\n'+JSON.stringify(raw_subs));
-            response.render('account-submission',{pageTitle:"Your Voice Forms",menu:system.menu,form:form,subs:raw_subs[0]});
+            db.find(keys.submissions(formId,true),function(vsubmissions){
+                var raw_vsubs = [];
+                if(vsubmissions){
+                    if("number" in vsubmissions[Object.keys(vsubmissions)[0]]){
+                        vsubmissions = [vsubmissions];
+                    }
+                    for(var i = 0; i < vsubmissions.length;i++){
+                        var sub_for_spec_num = vsubmissions[i];
+                        for(var callId2 in sub_for_spec_num){
+                            if(callId2 == callId){
+                                var submiss = sub_for_spec_num[callId];
+                                raw_vsubs.push(submiss);
+                            }
+                        }
+                    }
+                }
+               
+                //response.send(JSON.stringify(submissions)+'\n\n\n'+JSON.stringify(raw_subs));
+                response.render('account-submission',{pageTitle:"Your Voice Forms",menu:system.menu,form:form,subs:raw_subs[0],vsubs:raw_vsubs[0]});
+            });
+
+           
         });
 
     },function(){response.send("Error fetching form details");});

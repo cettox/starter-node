@@ -77,7 +77,19 @@ exports.getUserForms = function(username,next,err){
 	db.find(keys.userForms(username),function(forms){
 		next(forms);
 	},err);
+}
 
+exports.getAllForms = function(next,err){
+	if(next === undefined){
+		next = noop;
+	}
+	if(err == undefined){
+		err == noop;
+	}
+
+	db.find(keys.allForms(),function(forms){
+		next(forms);
+	},err);
 }
 
 exports.getUser = function(username,next,err){
