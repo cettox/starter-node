@@ -364,7 +364,7 @@ app.post('/connect_jotform', function(request,response){
 
                 for(key in form.qs){
                     var q = form.qs[key];
-                    if(q.type == "control_textbox"){
+                    if(q.type == "control_textbox" || q.type == "control_textarea" || q.type == "control_textarea" || q.type == "control_fullname"||q.type=="control_email" || q.type=="control_address"){
 
                         //create a callID 
                         var callId = system.getNewCallId(formId,number);
@@ -456,7 +456,7 @@ app.post('/get_audio/:callId/:formId/:number/:qid/:pqid', function(request,respo
             }
             var q = qs[key];
             if(flag === true){
-                if(q.type=='control_textbox'){
+                if(q.type == "control_textbox" || q.type == "control_textarea" || q.type == "control_textarea" || q.type == "control_fullname"||q.type=="control_email" || q.type=="control_address"){
                     next = key;
                     break;
                 }
